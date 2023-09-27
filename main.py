@@ -95,10 +95,12 @@ FORMAT = pyaudio.paInt16
 soundgate = 19
 tunerNotes = build_default_tuner_range()
 frequencies = np.array(sorted(tunerNotes.keys()))
+# newSection1 STARTS HERE --------------------------------------------------------------------------------------------------------
 prevNotesLen = 5
 prevNotes = [ None for x in range( prevNotesLen ) ]
 prevNotePtr =  0
 curr_acap = "mary.wav" # will be extended to more than one acapella
+# newSection1 ENDS HERE --------------------------------------------------------------------------------------------------------
 
 time_data = []   #for the graph
 frequency_data = []
@@ -146,6 +148,7 @@ def callback(in_data, frame_count, time_info, status):
 
     elapsed_time_str = calcTime()
 
+    # newSection2 STARTS HERE --------------------------------------------------------------------------------------------------------
 
     # 1. Update previous notes array
     prevNotes[prevNotePtr] = tunerNotes[frequencies[targetnote]]
@@ -156,14 +159,19 @@ def callback(in_data, frame_count, time_info, status):
     
         # 3a. Get singer frequency from acapella ${curr_acap} at the exact moment ${elapsed_time_str}
         singer_note = getSingedNote(elapsed_time_str)
+        
         # 3b. compare to find the mistake in percentage
         err_percentage = calculate_Diff_Percentage_From_Original(tunerNotes[frequencies[targetnote]], elapsed_time_str)
+
+    # newSection2 ENDS HERE --------------------------------------------------------------------------------------------------------
 
     # Print the note with the elapsed time and error percentage
     print(f"{elapsed_time_str}: {tunerNotes[frequencies[targetnote]]}")
 
     return (in_data, pyaudio.paContinue)
 
+
+# newSection3 STARTS HERE --------------------------------------------------------------------------------------------------------
 def compareToPrevNotes(note):
     for i in range(prevNotesLen):
         if prevNotes[i] != note:
@@ -175,14 +183,8 @@ def getSingedNote(timestr):
 
 def calculate_Diff_Percentage_From_Original(inputnote, timestr):
     return 0 # TO-DO: Implement this function
+# newSection3 ENDS HERE --------------------------------------------------------------------------------------------------------
 
-
-def abss(x):
-    if x >= 0:
-        return x
-    else:
-        return -x
-    
 def read_from_mic():
     pa = pyaudio.PyAudio()
     # p.get_default_input_device_info()
