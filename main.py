@@ -64,8 +64,8 @@ class OutOfTune:
         elapsed_minutes = int(elapsed_time // 60)
         return f"{elapsed_minutes}:{elapsed_seconds:02}:{elapsed_milliseconds:03}"
 
-    # callback with timestamp
-    def callback(self, in_data, frame_count, time_info, status_flags, user_settings):
+    # callback with timestamp (mic)
+    def callback_mic(self, in_data, frame_count, time_info, status_flags, user_settings):
         # time_info - to access the timing information
         # Check status_flags for any errors or termination conditions
         # raw_data_signal = np.fromstring( in_data,dtype= np.int16 )
@@ -104,12 +104,35 @@ class OutOfTune:
             # singer_note = getSingerNote(elapsed_time_str)
 
             # 3c. compare to find the mistake in percentage
-            err_percentage = self.calculate_Diff_Percentage_From_Original(curr_note, elapsed_time_str)
-
-            # A BIG TO-DO !!!! this callback is called wether its WAV or mic, we need to split the cases (and fix the RATE in WAV case) ------------------------------
+            # err_percentage = self.calculate_Diff_Percentage_From_Original(curr_note, elapsed_time_str)
 
         # Print the note with the elapsed time and error percentage
         print(f"{elapsed_time_str}: {curr_note}")
+
+        return (in_data, pyaudio.paContinue)
+
+    # callback with timestamp (wav)
+    def callback_wav(self, in_data, frame_count, time_info, status_flags, user_settings):
+        # time_info - to access the timing information
+        # Check status_flags for any errors or termination conditions
+        # raw_data_signal = np.fromstring( in_data,dtype= np.int16 )
+        raw_data_signal = np.frombuffer(in_data, dtype=np.int16)
+        signal_level = round(abs(self.loudness(raw_data_signal)), 2)  #### find the volume from the audio
+        try:
+            inputnote = round(self.freq_from_autocorr(raw_data_signal, self.RATE), 2)  #### find the freq from the audio
+        except:
+            inputnote = 0
+        if inputnote > self.frequencies[len(self.tunerNotes) - 1]:
+            return (raw_data_signal, pyaudio.paContinue)
+        if inputnote < self.frequencies[0]:
+            return (raw_data_signal, pyaudio.paContinue)
+        if signal_level > self.soundgate:
+            return (raw_data_signal, pyaudio.paContinue)
+        targetnote = self.closest_value_index(self.frequencies, round(inputnote, 2))
+        self.frequency_data.append(inputnote)
+        elapsed_time_str = self.calcTime()
+        # Print the note with the elapsed time and error percentage
+        print(f"{elapsed_time_str}: {self.tunerNotes[self.frequencies[targetnote]]}")
 
         return (in_data, pyaudio.paContinue)
 
@@ -127,8 +150,6 @@ class OutOfTune:
 
     def read_from_mic(self):
         pa = pyaudio.PyAudio()
-        # p.get_default_input_device_info()
-        # pyaudio.pa.__file__
         stream = pa.open(
             format=self.FORMAT,
             channels=1,
@@ -136,8 +157,7 @@ class OutOfTune:
             output=False,
             input=True,
             frames_per_buffer=self.BUFFERSIZE,
-            stream_callback=self.callback)
-
+            stream_callback=self.callback_mic)
 
         stream.start_stream()
 
@@ -237,13 +257,13 @@ class OutOfTune:
 
 
     def read_from_wav(self, file):
-        CHUNK = 1024
+        CHUNK = 16 # was originally 1024 but playing with it might cause the time problem (occurs on wav only, not mic)
         wf = wave.open(file, 'rb')
         data = wf.readframes(CHUNK)
         while data != b'':
             data = wf.readframes(CHUNK)
             settings = {'sample_rate': wf.getframerate()}
-            self.callback(data,256,0,0,settings) # if some note-recognizing problems occur set the 2nd param to 512 or 1024 or 2048 or ...
+            self.callback_wav(data,256,0,0,settings) # if some note-recognizing problems occur set the 2nd param to 512 or 1024 or 2048 or ...
 
 
     def convertMp3ToWav(self, input_file):
