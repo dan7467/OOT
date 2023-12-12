@@ -43,7 +43,7 @@ def saveToFile(songName, secondsList, freqList, sampleCounter, recordingLenSecon
 def getDataFromFile(songName):
     path = PATH + songName + '.txt'
     if not checkIfFileExists(path):
-        return None
+        return None, None, None
 
     freqDict = dict()
     #now read the data from the file and return sampleCounter ; recordingLenSeconds ; dictOfTimeToFreq ;

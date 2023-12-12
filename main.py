@@ -337,7 +337,7 @@ class OutOfTune:
 
         # CHUNK represents the number of frames read at a time from the audio file
         # wf.getframerate() is number of frames per second.
-        CHUNK = round(wf.getframerate() / 4)  # in this way we have 0.25 seconds of audio sample
+        CHUNK = round(wf.getframerate() / 100)  # if we put /4 : we have 0.25 seconds of audio sample
 
         data = wf.readframes(CHUNK)
         while data != b'':
@@ -348,10 +348,11 @@ class OutOfTune:
             # or 2048 or ...
 
         # ADDED
-        songName = file.split('.')[0]
+        songName = file.split('/')[-1].split('.')[0]
 
         secondsList, freqList, recordingLenSeconds = self.calcNotesWithTime(wf)
-        saveToFile(songName, secondsList, freqList, self.sampleCounter, recordingLenSeconds)
+        #Commented only to debug faster, remove comment...
+        #saveToFile(songName, secondsList, freqList, self.sampleCounter, recordingLenSeconds)
 
         if printGraph:
             self.plotGraphWav(secondsList, freqList)
@@ -400,8 +401,8 @@ class OutOfTune:
     # ADDED
     def calcTimeForWav(self, elapsed_time):
         elapsed_seconds = int(elapsed_time % 60)
-        elapsed_milliseconds = int((elapsed_time - elapsed_seconds) * 1000)
         elapsed_minutes = int(elapsed_time // 60)
+        elapsed_milliseconds = int(((elapsed_time - elapsed_seconds) % 60) * 1000)
         return f"{elapsed_minutes}:{elapsed_seconds:02}:{elapsed_milliseconds:03}"
 
     def convertMp3ToWav(self, input_file):
@@ -451,9 +452,10 @@ class OutOfTune:
 def getSongData(file, printBool):
     songName = file.split('.')[0]
 
+
     # If the song hadn't been analyzed
-    if not checkIfSongDataExists(songName):
-        wavPath = getSongWavPath(songName)
+    if not checkIfSongDataExists(songName) or True:  #or True just for DEBUG, remove comment
+        wavPath = getSongWavPath(file)
         oot.read_from_wav(wavPath, printBool)
 
     sampleCounter, recordingLenSeconds, freqDict = getDataFromFile(songName)
@@ -463,9 +465,11 @@ def getSongData(file, printBool):
 
 if __name__ == "__main__":
     oot = OutOfTune()
-    oot.read_from_mic()
+    #oot.read_from_mic()
 
     # Increasing the CHUNK decreases the sample rate, but too high is not working for some files. why?
     printGraph = False
 
-    #getSongData("mary.wav", printGraph)
+    #getSongData("v=Pc9vUAuohTU.wav", printGraph) this works with CHUNK = /80
+    getSongData("v=9-csY039Z64.wav", printGraph)
+
