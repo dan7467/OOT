@@ -15,7 +15,6 @@ from numpy import argmax, diff
 import time
 import wave
 import pyaudio
-import subprocess
 import keyboard
 import tkinter as tk
 
@@ -24,8 +23,8 @@ from compare import compareDicts
 
 class OutOfTune:
     def __init__(self):
-        self.sampleCounter = 0  # ADDED
-        self.detectedWavNotesDict = dict()  # ADDED   key = sample number , value = freq
+        self.sampleCounter = 0
+        self.detectedWavNotesDict = dict() # key = sample number , value = freq
         self.dictFromMic = dict()
         self.RATE = 16000
         self.BUFFERSIZE = 3072
@@ -136,7 +135,7 @@ class OutOfTune:
         self.pn_ptr = (self.pn_ptr + 1) % self.pn_len
 
 
-        self.dictFromMic[elapsed_time] = self.frequencies[targetNote]  #ADDED
+        self.dictFromMic[elapsed_time] = self.frequencies[targetNote]
 
         # 2. Check if all pn_arr are the same as the singed (by user) note, to make sure it is singed long enough
         if self.sameAsPrevNote(curr_note):
@@ -165,7 +164,6 @@ class OutOfTune:
         raw_data_signal = np.frombuffer(in_data, dtype=np.int16)
         signal_level = round(abs(self.loudness(raw_data_signal)), 2)  #### find the volume from the audio
 
-        # ADDED
         self.sampleCounter += 1
         # Some samples may fail. so we need to count the samples from here and only save in the dict the valid samples
 
@@ -185,7 +183,6 @@ class OutOfTune:
         targetnote = self.closest_value_index(self.frequencies, round(inputnote, 2))
         self.frequency_data.append(inputnote)
 
-        # ADDED
         # Save the note sample with the index of the sample. After all the samples are taken, we will calculate the time
         # of the sample according to the index.
         self.detectedWavNotesDict[self.sampleCounter] = self.frequencies[targetnote]
@@ -254,8 +251,6 @@ class OutOfTune:
         stream.stop_stream()
         stream.close()
         pa.terminate()
-
-
 
     # Function to stop the streaming and display the graph
     def stop_and_display_graph(self):
@@ -347,7 +342,6 @@ class OutOfTune:
                               settings)  # if some note-recognizing problems occur set the 2nd param to 512 or 1024
             # or 2048 or ...
 
-        # ADDED
         songName = file.split('/')[-1].split('.')[0]
 
         secondsList, freqList, recordingLenSeconds = self.calcNotesWithTime(wf)
@@ -357,7 +351,6 @@ class OutOfTune:
         if printGraph:
             self.plotGraphWav(secondsList, freqList)
 
-    # ADDED
     def calcNotesWithTime(self, wf):
         # Calculate samples taken and convert to time:
         samplesCounter = self.sampleCounter
@@ -383,7 +376,7 @@ class OutOfTune:
 
         return secondsList, self.detectedWavNotesDict.values(), recordingLenSeconds
 
-    # ADDED
+
     def plotGraphWav(self, xTime, yFreq):
         fig = plt.figure(figsize=(18, 6))
         ax = fig.add_subplot(111)
@@ -398,34 +391,12 @@ class OutOfTune:
         ax.set_yticklabels([self.tunerNotes[y] + f" ({str(y)}Hz) " for y in yAxis])
         plt.show()
 
-    # ADDED
     def calcTimeForWav(self, elapsed_time):
         elapsed_seconds = int(elapsed_time % 60)
         elapsed_minutes = int(elapsed_time // 60)
         elapsed_milliseconds = int(((elapsed_time - elapsed_seconds) % 60) * 1000)
         return f"{elapsed_minutes}:{elapsed_seconds:02}:{elapsed_milliseconds:03}"
 
-    def convertMp3ToWav(self, input_file):
-        inputName = input_file[:-4]
-        output_file = "C:/Fun projects/testingMusicalProject/" + inputName + ".wav"
-
-        # # convert mp3 file to wav file
-        inputWithPath = "C:/Fun projects/testingMusicalProject/" + input_file
-        # sound = AudioSegment.from_mp3(inputWithPath)
-        # sound.export(output_file, format="wav")
-
-        # subprocess.call(['ffmpeg', '-i', input_file, output_file])
-
-    def convertMp3ToWav2(self, input_mp3):
-
-        # Output WAV file path
-        output_wav = input_mp3[:-4] + ".wav"
-
-        # Load the MP3 file as a video clip (audio only)
-        clip = AudioFileClip(input_mp3)
-
-        # Write the audio to a WAV file
-        clip.write_audiofile(output_wav)
 
     def setTimerWindowButtons(self):
         self.root = tk.Tk()
@@ -467,9 +438,48 @@ if __name__ == "__main__":
     oot = OutOfTune()
     #oot.read_from_mic()
 
-    # Increasing the CHUNK decreases the sample rate, but too high is not working for some files. why?
     printGraph = False
 
     #getSongData("v=Pc9vUAuohTU.wav", printGraph) this works with CHUNK = /80
-    getSongData("Lewis Capaldi - Someone You Loved  ! v=HbVf4eaT9eg.wav", printGraph)
+    #getSongData("Lewis Capaldi - Someone You Loved  ! v=HbVf4eaT9eg.wav", printGraph)
+    getSongData("mary.wav", printGraph)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # def convertMp3ToWav(self, input_file):
+    #     inputName = input_file[:-4]
+    #     output_file = "C:/Fun projects/testingMusicalProject/" + inputName + ".wav"
+    #
+    #     # # convert mp3 file to wav file
+    #     inputWithPath = "C:/Fun projects/testingMusicalProject/" + input_file
+    #     # sound = AudioSegment.from_mp3(inputWithPath)
+    #     # sound.export(output_file, format="wav")
+    #
+    #     # subprocess.call(['ffmpeg', '-i', input_file, output_file])
+    #
+    # def convertMp3ToWav2(self, input_mp3):
+    #
+    #     # Output WAV file path
+    #     output_wav = input_mp3[:-4] + ".wav"
+    #
+    #     # Load the MP3 file as a video clip (audio only)
+    #     clip = AudioFileClip(input_mp3)
+    #
+    #     # Write the audio to a WAV file
+    #     clip.write_audiofile(output_wav)
 

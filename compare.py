@@ -5,6 +5,8 @@
 
 
 def compareDicts(originalDict, recordDict):
+    if originalDict is None or recordDict is None:
+        return -1
     if len(originalDict) == 0 or len(recordDict) == 0:
         return -1
 
