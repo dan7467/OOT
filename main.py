@@ -26,8 +26,9 @@ class OutOfTune:
         self.sampleCounter = 0
         self.detectedWavNotesDict = dict() # key = sample number , value = freq
         self.dictFromMic = dict()
-        self.RATE = 16000
-        self.BUFFERSIZE = 3072
+        self.RATE_MIC = 48000
+        self.time_to_proccess = 0.2       #time of each sample...
+        self.BUFFERSIZE = int(self.RATE_MIC * self.time_to_proccess)
         self.FORMAT = pyaudio.paInt16
         self.soundgate = 19
         self.tunerNotes = {65.41: 'C2', 69.30: 'C#2', 73.42: 'D2', 77.78: 'D#2',
@@ -111,7 +112,7 @@ class OutOfTune:
 
         signal_level = round(abs(self.loudness(raw_data_signal)), 2)  #### find the volume from the audio
         try:
-            frameRate = self.RATE
+            frameRate = self.RATE_MIC
             inputnote = round(self.freq_from_autocorr(raw_data_signal, frameRate), 2)  #### find the freq from the audio
 
         except:
@@ -213,19 +214,23 @@ class OutOfTune:
 
     def read_from_mic(self):
 
-        compareBool, notesDict, recordingLenSeconds = oot.getNameOfSongFromInput()
+        compareBool, notesDict, recordingLenSeconds, duration_to_process = oot.getNameOfSongFromInput()
+
+        bufferSize = self.BUFFERSIZE
         if compareBool:
             print("Comparing to a song!")
+            # ensure the time between each note printed is the same as the archived version!
+            bufferSize = int(self.RATE_MIC * duration_to_process)
 
 
         pa = pyaudio.PyAudio()
         stream = pa.open(
             format=self.FORMAT,
             channels=1,
-            rate=self.RATE,
+            rate=self.RATE_MIC,
             output=False,
             input=True,
-            frames_per_buffer=self.BUFFERSIZE,
+            frames_per_buffer=bufferSize,
             stream_callback=lambda in_data, frame_count, time_info, status_flags:
             self.callback_mic(in_data, frame_count, time_info, status_flags,
                               compareBool, notesDict, recordingLenSeconds, user_settings=None))  # Modify this line
@@ -332,7 +337,7 @@ class OutOfTune:
 
         # CHUNK represents the number of frames read at a time from the audio file
         # wf.getframerate() is number of frames per second.
-        CHUNK = round(wf.getframerate() / 100)  # if we put /4 : we have 0.25 seconds of audio sample
+        CHUNK = int(wf.getframerate() * self.time_to_proccess)
 
         data = wf.readframes(CHUNK)
         while data != b'':
@@ -346,7 +351,7 @@ class OutOfTune:
 
         secondsList, freqList, recordingLenSeconds = self.calcNotesWithTime(wf)
         #Commented only to debug faster, remove comment...
-        #saveToFile(songName, secondsList, freqList, self.sampleCounter, recordingLenSeconds)
+        #saveToFile(songName, secondsList, freqList, self.sampleCounter, recordingLenSeconds, self.time_to_proccess)
 
         if printGraph:
             self.plotGraphWav(secondsList, freqList)
@@ -413,11 +418,11 @@ class OutOfTune:
         if songName.lower() == 'none':
             return False, None, 0
         if checkIfSongDataExists(songName.lower()):
-            recordingLenSeconds, freqDict = getSongData(songName, False)
-            return True, freqDict, recordingLenSeconds
+            recordingLenSeconds, freqDict, duration_to_process = getSongData(songName, False)
+            return True, freqDict, recordingLenSeconds, duration_to_process
         else:
             print("Song does not exists!")
-            return False, None, 0
+            return False, None, 0, -1
 
 
 def getSongData(file, printBool):
@@ -425,25 +430,24 @@ def getSongData(file, printBool):
 
 
     # If the song hadn't been analyzed
-    if not checkIfSongDataExists(songName) or True:  #or True just for DEBUG, remove comment
+    if not checkIfSongDataExists(songName):
         wavPath = getSongWavPath(file)
         oot.read_from_wav(wavPath, printBool)
 
-    sampleCounter, recordingLenSeconds, freqDict = getDataFromFile(songName)
+    sampleCounter, recordingLenSeconds, freqDict, duration_to_process = getDataFromFile(songName)
     print("Got data from file")
-    return recordingLenSeconds, freqDict
+    return recordingLenSeconds, freqDict, duration_to_process
 
 
 if __name__ == "__main__":
     oot = OutOfTune()
-    #oot.read_from_mic()
+    oot.read_from_mic()
 
     printGraph = False
 
-    #getSongData("v=Pc9vUAuohTU.wav", printGraph) this works with CHUNK = /80
     #getSongData("Lewis Capaldi - Someone You Loved  ! v=HbVf4eaT9eg.wav", printGraph)
-    getSongData("mary.wav", printGraph)
-
+    #getSongData("mary.wav", printGraph)
+    #getSongData("ed sheeran perfect !.wav", printGraph)
 
 
 
