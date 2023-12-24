@@ -1,7 +1,4 @@
-
-
-
-
+from filesAccess import getDataFromFile
 
 
 def compareDicts(originalDict, recordDict):
@@ -43,6 +40,8 @@ def compareDicts(originalDict, recordDict):
     #         break
 
 
-
+def compareStrings(micString, archivedString):
+    print()
+    return
 
 
