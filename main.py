@@ -18,7 +18,7 @@ import pyaudio
 import keyboard
 import tkinter as tk
 
-from compare import compareStrings
+from compare import compareStrings, compareDTW
 from filesAccess import saveToFile, getDataFromFile, checkIfSongDataExists, getSongWavPath, FileData
 
 
@@ -49,8 +49,6 @@ class OutOfTune:
                            1661.0: 'G#6', 1760.0: 'A6', 1865.0: 'Bb6', 1976.0: 'B6',
                            2093.0: 'C7'}
         self.frequencies = np.array(sorted(self.tunerNotes.keys()))
-        self.time_data = []  # for the graph
-        self.frequency_data = []
         self.start_time = 0  # time.time()
         self.pn_len = 3
         self.pn_arr = [None for x in range(self.pn_len)]
@@ -93,7 +91,6 @@ class OutOfTune:
     def calcTime(self):
         # Calculate the elapsed time since recording started
         elapsed_time = time.time() - self.start_time
-        self.time_data.append(elapsed_time)
         return round(elapsed_time, 3)
 
         #lines below for a pretty print
@@ -126,9 +123,11 @@ class OutOfTune:
             return raw_data_signal, pyaudio.paContinue
         if signal_level > self.soundgate:
             return raw_data_signal, pyaudio.paContinue
+
+        #inputnote = inputnote / 2    #TEMP REMOVE THIS!!!!!
+
         targetNote = self.closest_value_index(self.frequencies, round(inputnote, 2))
 
-        self.frequency_data.append(inputnote)
         elapsed_time = self.calcTime()
 
         curr_note = self.tunerNotes[self.frequencies[targetNote]]
@@ -222,8 +221,10 @@ class OutOfTune:
         if compareBool:
             print("Comparing to a song!")
             # ensure the time between each note printed is the same as the archived version!
-            rate1 = int(fileData.sampleRate / 3)
+            rate1 = int(fileData.sampleRate)
             bufferSize = int(rate1 * fileData.durationToProcess)
+
+        print("Sample Rate: ", rate1)
 
         pa = pyaudio.PyAudio()
         stream = pa.open(
@@ -253,7 +254,7 @@ class OutOfTune:
 
         name = fileData.songName + "Mic"
         fileData = FileData(name, 0, 0, 0.2, 0, self.dictFromMic)
-#        saveToFile(fileData)   #for debugging
+        #saveToFile(fileData)   #for debugging
 
 
         stream.stop_stream()
@@ -342,6 +343,8 @@ class OutOfTune:
         # wf.getframerate() is number of frames per second.
         sampleRate = wf.getframerate()
         CHUNK = int(sampleRate * self.time_to_proccess)
+
+        print("Sample Rate: ", sampleRate)
 
         data = wf.readframes(CHUNK)
         while data != b'':
@@ -462,15 +465,17 @@ def compareTest():
 
     micSongData = getDataFromFile("maryMic")
 
-    micString = listToString(micSongData.getFrequencies())
-    archivedString = listToString(archivedSongData.getFrequencies())
+    compareDTW(micSongData, archivedSongData)
 
-    compareStrings(micString, archivedString)
+#    micString = listToString(micSongData.getFrequencies())
+#    archivedString = listToString(archivedSongData.getFrequencies())
+
+#    compareStrings(micString, archivedString)
 
 
 if __name__ == "__main__":
     oot = OutOfTune()
-    oot.read_from_mic()
+    #oot.read_from_mic()
 
     printGraph = False
 
@@ -478,7 +483,7 @@ if __name__ == "__main__":
     #getSongData("mary.wav", printGraph)
     #getSongData("Twinkle Twinkle Little Star.wav", printGraph)
     
-    #compareTest()
+    compareTest()
 
 
 

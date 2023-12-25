@@ -1,4 +1,10 @@
-from filesAccess import getDataFromFile
+from fastdtw import fastdtw
+from matplotlib import pyplot as plt
+from dtaidistance import dtw_visualisation as dtwvis, dtw
+from dtwParallel import dtw_functions
+
+from filesAccess import getDataFromFile, FileData
+import scipy.spatial.distance as d
 
 
 def compareDicts(originalDict, recordDict):
@@ -42,6 +48,62 @@ def compareDicts(originalDict, recordDict):
 
 def compareStrings(micString, archivedString):
     print()
+    return
+
+#https://discord.com/channels/1183328278983999579/1184833831686111365/1186322859036000437
+def fastDTWTest(x, y):
+    #distance, path = fastdtw(x, y, dist=d.euclidean)
+    distance, path = fastdtw(x, y, dist=d.cosine)
+    print(f"Distance: {distance}")
+    print(f"Path: {path}")
+
+    for (i,j) in path:
+        print(f"{i}: {x[i]}, {j}: {y[j]}")
+
+
+#https://discord.com/channels/1183328278983999579/1184833831686111365/1186323274964148295
+def dtwvisTest(x, y):
+    fig, ax = plt.subplots(2, 1, figsize=(1280 / 96, 720 / 96))
+
+    path = dtw.warping_path(x, y)
+
+    # Print matched points along the DTW alignment path
+    print("Matched Points:")
+    for point in path:
+        mic_idx, arc_idx = point
+        print(f"Microphone[{mic_idx}]={x[mic_idx]} - {y[arc_idx]}=Archive[{arc_idx}]")
+
+    dtwvis.plot_warping(x, y, path, fig=fig, axs=ax)
+    ax[0].set_title('Microphone Version')
+    ax[1].set_title('Archived Version')
+    fig.tight_layout()
+    plt.show()
+
+
+#Slow
+#Only return graph
+#https://discord.com/channels/1183328278983999579/1184833831686111365/1186586000865108028
+def dtwParallelTest(x, y):  #Slow
+
+    # Calculate DTW and get visualization
+    result = dtw_functions.dtw(x, y, get_visualization=True)
+
+    print(result)
+
+
+def compareDTW(micFreq : FileData, archivedFreq : FileData):
+
+    #I can try different distances (cosine, euclidean, norm1...)
+
+    x = micFreq.getFrequencies()
+    y = archivedFreq.getFrequencies()
+
+    x = [float(curr) for curr in x]
+    y = [float(curr) for curr in y]
+
+    #fastDTWTest(x, y)
+    #dtwvisTest(x, y)
+    dtwParallelTest(x, y)
     return
 
 
