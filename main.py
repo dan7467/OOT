@@ -25,13 +25,15 @@ from filesAccess import saveToFile, getDataFromFile, checkIfSongDataExists, getS
 class OutOfTune:
     def __init__(self):
         self.sampleCounter = 0
-        self.detectedWavNotesDict = dict() # key = sample number , value = freq
+        self.detectedWavNotesDict = dict()  # key = sample number , value = freq
         self.dictFromMic = dict()
         self.RATE_MIC = 48000
-        self.time_to_proccess = 0.2       #time of each sample...
-        self.BUFFERSIZE = int(self.RATE_MIC * self.time_to_proccess)
+        self.TIME_TO_PROCESS = 0.2  # time of each sample...
+        self.MIN_TIME_FOR_BREAK = 1.5  # if there is distance of more than this between 2 notes, we put 0 between them
+        # for example: 5:20 - D , 5:30 - D , 5:44 - D , 7:44 - C  -> 5:20 - D , 6:44 - 0 , 7:44 - C
+        self.BUFFER_SIZE = int(self.RATE_MIC * self.TIME_TO_PROCESS)
         self.FORMAT = pyaudio.paInt16
-        self.soundgate = 19
+        self.soundGate = 19
         self.tunerNotes = {65.41: 'C2', 69.30: 'C#2', 73.42: 'D2', 77.78: 'D#2',
                            82.41: 'E2', 87.31: 'F2', 92.50: 'F#2', 98.00: 'G2',
                            103.80: 'G#2', 110.00: 'A2', 116.50: 'Bb2', 123.50: 'B2',
@@ -50,10 +52,10 @@ class OutOfTune:
                            2093.0: 'C7'}
         self.frequencies = np.array(sorted(self.tunerNotes.keys()))
         self.start_time = 0  # time.time()
-        self.pn_len = 3
-        self.pn_arr = [None for x in range(self.pn_len)]
+        # self.pn_len = 3
+        # self.pn_arr = [None for x in range(self.pn_len)]
         self.pn_single = 'C1'
-        self.pn_ptr = 0
+        # self.pn_ptr = 0
         self.curr_acap = "mary.wav"  # will be extended to more than one acapella
 
         # Setting for the timer window
@@ -67,6 +69,8 @@ class OutOfTune:
         self.stop_flag = False
 
     def freqToNote(self, freq):
+        if freq == 0:
+            return '0'
         return self.tunerNotes[freq]
 
     def stop_timer(self):
@@ -83,7 +87,6 @@ class OutOfTune:
 
         self.root.quit()
 
-
     def find(self, condition):
         res, = np.nonzero(np.ravel(condition))
         return res
@@ -93,12 +96,12 @@ class OutOfTune:
         elapsed_time = time.time() - self.start_time
         return round(elapsed_time, 3)
 
-        #lines below for a pretty print
+        # lines below for a pretty print
         # Convert the elapsed time to a formatted string
-        #elapsed_seconds = int(elapsed_time % 60)
-        #elapsed_milliseconds = int((elapsed_time - elapsed_seconds) * 1000)
-        #elapsed_minutes = int(elapsed_time // 60)
-        #return f"{elapsed_minutes}:{elapsed_seconds:02}:{elapsed_milliseconds:03}"
+        # elapsed_seconds = int(elapsed_time % 60)
+        # elapsed_milliseconds = int((elapsed_time - elapsed_seconds) * 1000)
+        # elapsed_minutes = int(elapsed_time // 60)
+        # return f"{elapsed_minutes}:{elapsed_seconds:02}:{elapsed_milliseconds:03}"
 
     # callback with timestamp (mic)
     def callback_mic(self, in_data, frame_count, time_info, status_flags, compareBool, sampleRate):
@@ -107,7 +110,7 @@ class OutOfTune:
         # raw_data_signal = np.fromstring( in_data,dtype= np.int16 )
         raw_data_signal = np.frombuffer(in_data, dtype=np.int16)
 
-        if not self.start_flag:     #if the timer hadn't been started
+        if not self.start_flag:  # if the timer hadn't been started
             return raw_data_signal, pyaudio.paContinue
 
         signal_level = round(abs(self.loudness(raw_data_signal)), 2)  #### find the volume from the audio
@@ -121,10 +124,10 @@ class OutOfTune:
             return raw_data_signal, pyaudio.paContinue
         if inputnote < self.frequencies[0]:
             return raw_data_signal, pyaudio.paContinue
-        if signal_level > self.soundgate:
+        if signal_level > self.soundGate:
             return raw_data_signal, pyaudio.paContinue
 
-        #inputnote = inputnote / 2    #TEMP REMOVE THIS!!!!!
+        # inputnote = inputnote / 2    #TEMP REMOVE THIS!!!!!
 
         targetNote = self.closest_value_index(self.frequencies, round(inputnote, 2))
 
@@ -133,24 +136,23 @@ class OutOfTune:
         curr_note = self.tunerNotes[self.frequencies[targetNote]]
         self.dictFromMic[elapsed_time] = self.frequencies[targetNote]
 
+        #        # 1. Update previous notes array
+        #        self.pn_arr[self.pn_ptr] = curr_note
+        #        self.pn_ptr = (self.pn_ptr + 1) % self.pn_len
 
-#        # 1. Update previous notes array
-#        self.pn_arr[self.pn_ptr] = curr_note
-#        self.pn_ptr = (self.pn_ptr + 1) % self.pn_len
-
-#        # 2. Check if all pn_arr are the same as the singed (by user) note, to make sure it is singed long enough
-#        if self.sameAsPrevNote(curr_note):
-#
-#            # 3a. If needed- announce Note Change
-#            if self.pn_single != curr_note:
-#                #print('\t\t\t', self.pn_single, '   - >   ', curr_note)
-#                self.pn_single = curr_note
-#
-#            # 3b. Get singer frequency from acapella ${curr_acap} at the exact moment ${elapsed_time_str}
-#            # singer_note = getSingerNote(elapsed_time_str)
-#
-#            # 3c. compare to find the mistake in percentage
-#            # err_percentage = self.calculate_Diff_Percentage_From_Original(curr_note, elapsed_time_str)
+        #        # 2. Check if all pn_arr are the same as the singed (by user) note, to make sure it is singed long enough
+        #        if self.sameAsPrevNote(curr_note):
+        #
+        #            # 3a. If needed- announce Note Change
+        #            if self.pn_single != curr_note:
+        #                #print('\t\t\t', self.pn_single, '   - >   ', curr_note)
+        #                self.pn_single = curr_note
+        #
+        #            # 3b. Get singer frequency from acapella ${curr_acap} at the exact moment ${elapsed_time_str}
+        #            # singer_note = getSingerNote(elapsed_time_str)
+        #
+        #            # 3c. compare to find the mistake in percentage
+        #            # err_percentage = self.calculate_Diff_Percentage_From_Original(curr_note, elapsed_time_str)
 
         # Print the note with the elapsed time and error percentage
         print(f"{elapsed_time}: {curr_note}")
@@ -178,11 +180,11 @@ class OutOfTune:
             return raw_data_signal, pyaudio.paContinue
         if inputnote < self.frequencies[0]:
             return raw_data_signal, pyaudio.paContinue
-        if signal_level > self.soundgate:
+        if signal_level > self.soundGate:
             return raw_data_signal, pyaudio.paContinue
 
         targetnote = self.closest_value_index(self.frequencies, round(inputnote, 2))
-        self.frequency_data.append(inputnote)
+        #self.frequency_data.append(inputnote)
 
         # Save the note sample with the index of the sample. After all the samples are taken, we will calculate the time
         # of the sample according to the index.
@@ -216,7 +218,7 @@ class OutOfTune:
 
         fileData = oot.getNameOfSongFromInput()
         rate1 = self.RATE_MIC
-        bufferSize = self.BUFFERSIZE
+        bufferSize = self.BUFFER_SIZE
         compareBool = fileData is not None
         if compareBool:
             print("Comparing to a song!")
@@ -249,13 +251,16 @@ class OutOfTune:
         #         break  # Break out of the loop if the stop flag is set
         #     time.sleep(0.1)
 
-        #Gets here after the stop button is pushed!
+        # Gets here after the stop button is pushed!
         print("Recording stopped")
 
         name = fileData.songName + "Mic"
-        fileData = FileData(name, 0, 0, 0.2, 0, self.dictFromMic)
-        #saveToFile(fileData)   #for debugging
 
+        filteredDict = self.removeDuplicatesFromDict(self.dictFromMic)
+        self.dictFromMic = filteredDict
+
+        fileData = FileData(name, 0, 0, 0.2, 0, self.dictFromMic)
+        saveToFile(fileData)   #for debugging
 
         stream.stop_stream()
         stream.close()
@@ -266,7 +271,7 @@ class OutOfTune:
         global stop_streaming
         stop_streaming = True
         plt.figure(figsize=(12, 6))
-        plt.plot(self.time_data, self.frequency_data)
+        #plt.plot(self.time_data, self.frequency_data)
         plt.xlabel('Time (seconds)')
         plt.ylabel('Frequency (Hz)')
         plt.title('Time vs. Frequency')
@@ -332,6 +337,34 @@ class OutOfTune:
                 break
             time.sleep(0.1)
 
+    def removeDuplicatesFromDict(self, freqDict):
+        result = dict()
+
+        lastSecond = 0
+        lastFreq = 0
+        for currSecond, currFreq in freqDict.items():
+            if currSecond - lastSecond > self.MIN_TIME_FOR_BREAK:      #silence in original song
+                result[lastSecond + self.MIN_TIME_FOR_BREAK/2] = 0
+                result[currSecond] = currFreq
+                lastFreq = currFreq
+            elif currFreq != lastFreq:                                                      #the note had changed
+                result[currSecond] = currFreq
+                lastFreq = currFreq
+            # if currFreq = lastFreq we don't need to save it, because before is the same
+            lastSecond = currSecond
+
+
+        #print the result for debug
+        print("\nNotes after filtering\n")
+        for second, freq in result.items():
+            currNote = self.freqToNote(freq)
+            print(f"{second}: {currNote}")
+
+
+        return result
+
+
+
     def read_from_wav(self, file, printGraph):
         # Increase the CHUNK is lowering the sampling rate
         # CHUNK = 4096  # if its 4096 it works good for mary and not for retroGame. If its 512 it works for both, but
@@ -342,7 +375,7 @@ class OutOfTune:
         # CHUNK represents the number of frames read at a time from the audio file
         # wf.getframerate() is number of frames per second.
         sampleRate = wf.getframerate()
-        CHUNK = int(sampleRate * self.time_to_proccess)
+        CHUNK = int(sampleRate * self.TIME_TO_PROCESS)
 
         print("Sample Rate: ", sampleRate)
 
@@ -358,13 +391,16 @@ class OutOfTune:
         for currSecond, currFreq in zip(secondsList, freqList):
             resultDict[currSecond] = currFreq
 
-        #Commented only to debug faster, remove comment...
-        fileData = FileData(songName, self.sampleCounter, recordingLenSeconds, self.time_to_proccess,
-                            sampleRate, resultDict)
-        #saveToFile(fileData)
-#
-        #
-        #
+        dict_filtered = self.removeDuplicatesFromDict(resultDict)
+
+        # Commented only to debug faster, remove comment...
+        fileData = FileData(songName, self.sampleCounter, recordingLenSeconds, self.TIME_TO_PROCESS,
+                            sampleRate, dict_filtered)
+        saveToFile(fileData)
+
+        secondsList = dict_filtered.keys()
+        freqList = dict_filtered.values()
+
         if printGraph:
             self.plotGraphWav(secondsList, freqList)
 
@@ -394,7 +430,6 @@ class OutOfTune:
 
         return secondsList, self.detectedWavNotesDict.values(), recordingLenSeconds
 
-
     def plotGraphWav(self, xTime, yFreq):
         fig = plt.figure(figsize=(18, 6))
         ax = fig.add_subplot(111)
@@ -414,7 +449,6 @@ class OutOfTune:
         elapsed_minutes = int(elapsed_time // 60)
         elapsed_milliseconds = int(((elapsed_time - elapsed_seconds) % 60) * 1000)
         return f"{elapsed_minutes}:{elapsed_seconds:02}:{elapsed_milliseconds:03}"
-
 
     def setTimerWindowButtons(self):
         self.root = tk.Tk()
@@ -441,7 +475,6 @@ class OutOfTune:
 def getSongData(file, printBool):
     songName = file.split('.')[0]
 
-
     # If the song hadn't been analyzed
     if not checkIfSongDataExists(songName):
         wavPath = getSongWavPath(file)
@@ -452,13 +485,13 @@ def getSongData(file, printBool):
     return fileData
 
 
-
 def listToString(freqList):
     result = ""
     oot = OutOfTune()
     for curr in freqList:
         result += " " + str(oot.freqToNote(float(curr)))
     return result
+
 
 def compareTest():
     archivedSongData = getDataFromFile("mary")
@@ -467,7 +500,8 @@ def compareTest():
 
     compareDTW(micSongData, archivedSongData)
 
-#    micString = listToString(micSongData.getFrequencies())
+
+    micString = listToString(micSongData.getFrequencies())
 #    archivedString = listToString(archivedSongData.getFrequencies())
 
 #    compareStrings(micString, archivedString)
@@ -479,11 +513,12 @@ if __name__ == "__main__":
 
     printGraph = False
 
-    #getSongData("Lewis Capaldi - Someone You Loved  ! v=HbVf4eaT9eg.wav", printGraph)
+    # getSongData("Lewis Capaldi - Someone You Loved  ! v=HbVf4eaT9eg.wav", printGraph)
     #getSongData("mary.wav", printGraph)
     #getSongData("Twinkle Twinkle Little Star.wav", printGraph)
-    
+
     compareTest()
+
 
 
 
@@ -514,4 +549,3 @@ if __name__ == "__main__":
     #
     #     # Write the audio to a WAV file
     #     clip.write_audiofile(output_wav)
-
