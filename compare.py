@@ -1,8 +1,11 @@
+import numpy as np
 from fastdtw import fastdtw
 from matplotlib import pyplot as plt
 from dtaidistance import dtw_visualisation as dtwvis, dtw
 from dtwParallel import dtw_functions
-
+# from shapedtw.shapedtw import shape_dtw
+# from shapedtw.shapeDescriptors import SlopeDescriptor, PAADescriptor, CompoundDescriptor
+# from shapedtw.dtwPlot import dtwPlot
 from filesAccess import getDataFromFile, FileData
 import scipy.spatial.distance as d
 
@@ -91,18 +94,18 @@ def dtwParallelTest(x, y):  #Slow
     print(result)
 
 
-def compareDTW(micFreq : FileData, archivedFreq : FileData):
+def compareDTW(micFreq: FileData, archivedFreq: FileData):
 
     #I can try different distances (cosine, euclidean, norm1...)
 
     x = micFreq.getFrequencies()
     y = archivedFreq.getFrequencies()
 
-    x = [float(curr) for curr in x]
-    y = [float(curr) for curr in y]
+    x = np.array([float(curr) for curr in x])
+    y = np.array([float(curr) for curr in y])
 
-    fastDTWTest(x, y)
-    #dtwvisTest(x, y)
+    #fastDTWTest(x, y)
+    dtwvisTest(x, y)
     #dtwParallelTest(x, y)
 
     return
