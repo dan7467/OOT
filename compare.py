@@ -101,9 +101,10 @@ def compareDTW(micFreq : FileData, archivedFreq : FileData):
     x = [float(curr) for curr in x]
     y = [float(curr) for curr in y]
 
-    #fastDTWTest(x, y)
+    fastDTWTest(x, y)
     #dtwvisTest(x, y)
-    dtwParallelTest(x, y)
+    #dtwParallelTest(x, y)
+
     return
 
 
