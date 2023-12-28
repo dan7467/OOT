@@ -19,6 +19,7 @@ import keyboard
 import tkinter as tk
 
 from compare import compareStrings, compareDTW
+from crepeTest import testCrepe, crepePrediction
 from filesAccess import saveToFile, getDataFromFile, checkIfSongDataExists, getSongWavPath, FileData
 
 
@@ -27,11 +28,11 @@ class OutOfTune:
         self.sampleCounter = 0
         self.detectedWavNotesDict = dict()  # key = sample number , value = freq
         self.dictFromMic = dict()
-        self.RATE_MIC = 48000
-        self.TIME_TO_PROCESS = 0.2  # time of each sample...
+        self.rate_mic = 16000
+        self.TIME_TO_PROCESS = 0.05  # time of each sample...
         self.MIN_TIME_FOR_BREAK = 1.5  # if there is distance of more than this between 2 notes, we put 0 between them
         # for example: 5:20 - D , 5:30 - D , 5:44 - D , 7:44 - C  -> 5:20 - D , 6:44 - 0 , 7:44 - C
-        self.BUFFER_SIZE = int(self.RATE_MIC * self.TIME_TO_PROCESS)
+        self.buffer_size = int(self.rate_mic * self.TIME_TO_PROCESS)
         self.FORMAT = pyaudio.paInt16
         self.soundGate = 19
         self.tunerNotes = {65.41: 'C2', 69.30: 'C#2', 73.42: 'D2', 77.78: 'D#2',
@@ -67,13 +68,50 @@ class OutOfTune:
 
         self.start_flag = False
         self.stop_flag = False
+        self.recorded_frames_crepe = []
+        self.stream = None
+        self.pa = None
+        self.matchingToSongBool = False
 
     def freqToNote(self, freq):
         if freq == 0:
             return '0'
         return self.tunerNotes[freq]
 
+
+
+    def start_timer(self):
+        print("Buffer size: ", self.buffer_size)
+        self.pa = pyaudio.PyAudio()
+        self.stream = self.pa.open(
+            format=self.FORMAT,
+            channels=1,
+            rate=self.rate_mic,
+            output=False,
+            input=True,
+            frames_per_buffer=self.buffer_size,
+            stream_callback=lambda in_data, frame_count, time_info, status_flags:
+            self.callback_mic(in_data, frame_count, time_info, status_flags,
+                              self.matchingToSongBool, self.rate_mic))
+
+
+        self.stream.start_stream()
+        print("Timer is starting")
+        self.start_flag = True
+        self.start_time = time.time()
+        timer_thread = threading.Thread(target=self.display_timer)
+        timer_thread.start()
+
+
     def stop_timer(self):
+        self.stream.stop_stream()
+        self.stream.close()
+        self.pa.terminate()
+        self.root.quit()
+
+        if self.recorded_frames_crepe:
+            self.save_in_wav(self.recorded_frames_crepe)
+
         self.stop_flag = True  # Set stop flag to True to stop the microphone input loop
 
     # display timer in a different window
@@ -105,6 +143,10 @@ class OutOfTune:
 
     # callback with timestamp (mic)
     def callback_mic(self, in_data, frame_count, time_info, status_flags, compareBool, sampleRate):
+
+        self.recorded_frames_crepe.append(in_data)   #for crepe
+
+
         # time_info - to access the timing information
         # Check status_flags for any errors or termination conditions
         # raw_data_signal = np.fromstring( in_data,dtype= np.int16 )
@@ -136,23 +178,7 @@ class OutOfTune:
         curr_note = self.tunerNotes[self.frequencies[targetNote]]
         self.dictFromMic[elapsed_time] = self.frequencies[targetNote]
 
-        #        # 1. Update previous notes array
-        #        self.pn_arr[self.pn_ptr] = curr_note
-        #        self.pn_ptr = (self.pn_ptr + 1) % self.pn_len
 
-        #        # 2. Check if all pn_arr are the same as the singed (by user) note, to make sure it is singed long enough
-        #        if self.sameAsPrevNote(curr_note):
-        #
-        #            # 3a. If needed- announce Note Change
-        #            if self.pn_single != curr_note:
-        #                #print('\t\t\t', self.pn_single, '   - >   ', curr_note)
-        #                self.pn_single = curr_note
-        #
-        #            # 3b. Get singer frequency from acapella ${curr_acap} at the exact moment ${elapsed_time_str}
-        #            # singer_note = getSingerNote(elapsed_time_str)
-        #
-        #            # 3c. compare to find the mistake in percentage
-        #            # err_percentage = self.calculate_Diff_Percentage_From_Original(curr_note, elapsed_time_str)
 
         # Print the note with the elapsed time and error percentage
         print(f"{elapsed_time}: {curr_note}")
@@ -207,64 +233,59 @@ class OutOfTune:
     def open_timer_thread(self):
         self.root.mainloop()  # for the timerWindow and main window
 
-    def start_timer(self):
-        print("Timer is starting")
-        self.start_flag = True
-        self.start_time = time.time()
-        timer_thread = threading.Thread(target=self.display_timer)
-        timer_thread.start()
 
     def read_from_mic(self):
 
         fileData = oot.getNameOfSongFromInput()
-        rate1 = self.RATE_MIC
-        bufferSize = self.BUFFER_SIZE
-        compareBool = fileData is not None
-        if compareBool:
+        self.matchingToSongBool = fileData is not None
+        if self.matchingToSongBool:
             print("Comparing to a song!")
             # ensure the time between each note printed is the same as the archived version!
-            rate1 = int(fileData.sampleRate)
-            bufferSize = int(rate1 * fileData.durationToProcess)
+            self.rate_mic = int(fileData.sampleRate)
+            self.buffer_size = int(self.rate_mic * fileData.durationToProcess)
 
-        print("Sample Rate: ", rate1)
+        print("Sample Rate: ", self.rate_mic)
 
-        pa = pyaudio.PyAudio()
-        stream = pa.open(
-            format=self.FORMAT,
-            channels=1,
-            rate=rate1,
-            output=False,
-            input=True,
-            frames_per_buffer=bufferSize,
-            stream_callback=lambda in_data, frame_count, time_info, status_flags:
-            self.callback_mic(in_data, frame_count, time_info, status_flags,
-                              compareBool, rate1))  # Modify this line
-        # stream_callback=self.callback_mic)
-
-        stream.start_stream()
+        # self.pa = pyaudio.PyAudio()
+        # self.stream = self.pa.open(
+        #     format=self.FORMAT,
+        #     channels=1,
+        #     rate=self.rate_mic,
+        #     output=False,
+        #     input=True,
+        #     frames_per_buffer=self.rate_mic,
+        #     stream_callback=lambda in_data, frame_count, time_info, status_flags:
+        #     self.callback_mic(in_data, frame_count, time_info, status_flags,
+        #                       compareBool, self.rate_mic))
 
         oot.open_timer_thread()
-
-        # # I don't think this lines work... it is not useful
-        # while not self.stop_flag:
-        #     if self.stop_flag:
-        #         break  # Break out of the loop if the stop flag is set
-        #     time.sleep(0.1)
 
         # Gets here after the stop button is pushed!
         print("Recording stopped")
 
-        name = fileData.songName + "Mic"
 
         filteredDict = self.removeDuplicatesFromDict(self.dictFromMic)
         self.dictFromMic = filteredDict
 
-        fileData = FileData(name, 0, 0, 0.2, 0, self.dictFromMic)
-        saveToFile(fileData)   #for debugging
+        #name = fileData.songName + "Mic"
+        #fileData = FileData(name, 0, 0, 0.2, 0, self.dictFromMic)
+        #saveToFile(fileData)   #for debugging
 
-        stream.stop_stream()
-        stream.close()
-        pa.terminate()
+
+        record_path = './recorded_audio.wav'
+        testCrepe(record_path)
+
+
+    def save_in_wav(self, frames):
+        file_path = 'recorded_audio.wav'
+
+        wf = wave.open(file_path, 'wb')
+        wf.setnchannels(1)
+        wf.setsampwidth(self.pa.get_sample_size(pyaudio.paInt16))
+        wf.setframerate(self.rate_mic)
+        wf.writeframes(b''.join(frames))
+        wf.close()
+
 
     # Function to stop the streaming and display the graph
     def stop_and_display_graph(self):
@@ -509,7 +530,7 @@ def compareTest():
 
 if __name__ == "__main__":
     oot = OutOfTune()
-    #oot.read_from_mic()
+    oot.read_from_mic()
 
     printGraph = False
 
@@ -517,7 +538,10 @@ if __name__ == "__main__":
     #getSongData("mary.wav", printGraph)
     #getSongData("Twinkle Twinkle Little Star.wav", printGraph)
 
-    compareTest()
+    #compareTest()
+
+    audio_path = './songsWav/mary.wav'
+    #testCrepe(audio_path)
 
 
 
