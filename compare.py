@@ -8,7 +8,8 @@ from dtwParallel import dtw_functions
 # from shapedtw.dtwPlot import dtwPlot
 from filesAccess import getDataFromFile, FileData
 import scipy.spatial.distance as d
-
+from tslearn.preprocessing import TimeSeriesScalerMeanVariance
+from tslearn import metrics
 
 def compareDicts(originalDict, recordDict):
     if originalDict is None or recordDict is None:
@@ -68,7 +69,8 @@ def fastDTWTest(x, y):
 def dtwvisTest(x, y):
     fig, ax = plt.subplots(2, 1, figsize=(1280 / 96, 720 / 96))
 
-    path = dtw.warping_path(x, y)
+    #path = dtw.warping_path(x, y)
+    path = dtw.warping_path(x, y, window=1)
 
     # Print matched points along the DTW alignment path
     print("Matched Points:")
@@ -93,6 +95,66 @@ def dtwParallelTest(x, y):  #Slow
 
     print(result)
 
+# LCSS LOOKS GOOD  !!!! , works better than dtw
+#https://tslearn.readthedocs.io/en/stable/auto_examples/metrics/plot_lcss.html#sphx-glr-auto-examples-metrics-plot-lcss-py:~:text=Longest%20Common%20Subsequence%C2%B6
+def lcssAndDTW(x, y):
+
+    #Do I need to normalize it? yse a scaler like the example from the link?
+
+    # Calculate LCSS path and similarity
+    lcss_path, sim_lcss = metrics.lcss_path(x, y)
+    #lcss_path, sim_lcss = metrics.lcss_path(x, y, eps=1.5)   #check what is eps
+
+    # Calculate DTW path and similarity
+    dtw_path, sim_dtw = metrics.dtw_path(x, y)
+
+    # Plotting
+    plt.figure(figsize=(8, 8))
+
+    plt.plot(x, "r-", label='First time series')
+    plt.plot(y, color='black', linestyle='--', label='Second time series')
+
+    for positions in lcss_path:
+        plt.plot([positions[0], positions[1]],
+                 [x[positions[0]], y[positions[1]]], color='orange')
+    plt.legend()
+    plt.title("Time series matching with LCSS")
+
+    plt.figure(figsize=(8, 8))
+    plt.plot(x, "r-", label='First time series')
+    plt.plot(y, color='black', linestyle='--', label='Second time series')
+
+    for positions in dtw_path:
+        plt.plot([positions[0], positions[1]],
+                 [x[positions[0]], y[positions[1]]], color='orange')
+
+
+
+    #print the matches of lcss
+    for positions in lcss_path:
+        print(f'x[{positions[0]}] = {x[positions[0]]} , {y[positions[1]]} = y[{positions[1]}]')
+
+    lcss0 = [position[0] for position in lcss_path]
+    notMatched0 = [i for i in range(lcss0[-1]) if i not in lcss0]
+
+    lcss1 = [position[1] for position in lcss_path]
+    notMatched1 = [i for i in range(lcss1[-1]) if i not in lcss1]
+
+
+    print("\nNow printing not matched notes\n")
+
+    [print(f"Note X[{i}]={x[i]} is not matched") for i in notMatched0]
+    print("\n")
+    [print(f"Note Y[{i}]={y[i]} is not matched") for i in notMatched1]
+
+
+    plt.legend()
+    plt.title("Time series matching with DTW")
+
+    plt.tight_layout()
+    plt.show()
+
+
 
 def compareDTW(micFreq: FileData, archivedFreq: FileData):
 
@@ -105,8 +167,10 @@ def compareDTW(micFreq: FileData, archivedFreq: FileData):
     y = np.array([float(curr) for curr in y])
 
     #fastDTWTest(x, y)
-    dtwvisTest(x, y)
+    #dtwvisTest(x, y)
     #dtwParallelTest(x, y)
+    lcssAndDTW(x, y)
+
 
     return
 
