@@ -53,6 +53,10 @@ def crepePrediction(sr, y):
     plt.tight_layout()
     plt.show()
 
+    #iterate on time and frequency and filter duplicated freq. After it, save it in a file.
+    #search for a function to transform freq to note (maybe use closest_value_index and then freqToNote)
+    #and then see how to compare between the 2 lists!
+
 
 def testCrepe(audio_path):
     # Load audio file using librosa
