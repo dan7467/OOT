@@ -70,6 +70,7 @@ class OutOfTune:
         self.pa = None
         self.matchingToSongBool = False
         self.CONFIDENCE_LEVEL = 0.95
+        self.songName = ""
 
     def freqToNote(self, freq):
         if freq == 0:
@@ -212,11 +213,14 @@ class OutOfTune:
 
         fileData = oot.getNameOfSongFromInput()
         self.matchingToSongBool = fileData is not None
+        self.songName = "tempMic"
+        self.CONFIDENCE_LEVEL = 0.8
         if self.matchingToSongBool:
             print("Comparing to a song!")
             # ensure the time between each note printed is the same as the archived version!
             self.rate_mic = int(fileData.sampleRate)
             self.buffer_size = int(self.rate_mic * fileData.durationToProcess)
+            self.songName = fileData.songName + 'Mic'
 
         print("Sample Rate: ", self.rate_mic)
 
@@ -226,15 +230,15 @@ class OutOfTune:
         print("Recording stopped")
 
 
-        filteredDict = dict() #self.removeDuplicatesFromDict(self.dictFromMic)
-        self.dictFromMic = filteredDict
+        record_path = getSongWavPath(self.songName) + '.wav'
 
-        record_path = './recorded_audio.wav'
-        testCrepe(record_path)
+        #Until here we saved the recorded in a wav file, now we analyze it and save the data!
+
+        self.read_from_wav(record_path, True)
 
 
     def save_in_wav(self, frames):
-        file_path = 'recorded_audio.wav'
+        file_path = getSongWavPath(self.songName) + '.wav'
 
         wf = wave.open(file_path, 'wb')
         wf.setnchannels(1)
@@ -341,7 +345,6 @@ class OutOfTune:
         reliable_time = seconds[reliable_indices]
         reliable_frequency = frequency[reliable_indices]
 
-
         if printGraph:
             self.plotGraphWav(reliable_time, reliable_frequency, reliable_confidence)
 
@@ -375,6 +378,9 @@ class OutOfTune:
 
         plt.tight_layout()
         plt.show()
+
+        fig.savefig('wavGraph.png')
+
         return
 
 
@@ -438,12 +444,12 @@ def compareTest():
 
 if __name__ == "__main__":
     oot = OutOfTune()
-    #oot.read_from_mic()
+    oot.read_from_mic()
 
     printGraph = True
 
     # getSongData("Lewis Capaldi - Someone You Loved  ! v=HbVf4eaT9eg.wav", printGraph)
-    getSongData("mary.wav", printGraph)
+    # getSongData("Twinkle Twinkle Little Star.wav", printGraph)
     #getSongData("Twinkle Twinkle Little Star.wav", printGraph)
 
     #compareTest()
