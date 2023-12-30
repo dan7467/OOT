@@ -444,7 +444,7 @@ def compareTest():
 
 if __name__ == "__main__":
     oot = OutOfTune()
-    oot.read_from_mic()
+    #oot.read_from_mic()
 
     printGraph = True
 
@@ -452,7 +452,7 @@ if __name__ == "__main__":
     # getSongData("Twinkle Twinkle Little Star.wav", printGraph)
     #getSongData("Twinkle Twinkle Little Star.wav", printGraph)
 
-    #compareTest()
+    compareTest()
 
     #audio_path = './songsWav/mary.wav'
     #audio_path = './recorded_mary.wav'

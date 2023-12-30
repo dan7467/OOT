@@ -11,6 +11,7 @@ import scipy.spatial.distance as d
 from tslearn.preprocessing import TimeSeriesScalerMeanVariance
 from tslearn import metrics
 
+
 def compareDicts(originalDict, recordDict):
     if originalDict is None or recordDict is None:
         return -1
