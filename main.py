@@ -31,7 +31,7 @@ class OutOfTune:
         self.detectedWavNotesDict = dict()  # key = sample number , value = freq
         self.dictFromMic = dict()
         self.rate_mic = 16000
-        self.TIME_TO_PROCESS = 0.05  # time of each sample...
+        self.TIME_TO_PROCESS = 0.1  # time of each sample...
         self.MIN_TIME_FOR_BREAK = 1.5  # if there is distance of more than this between 2 notes, we put 0 between them
         # for example: 5:20 - D , 5:30 - D , 5:44 - D , 7:44 - C  -> 5:20 - D , 6:44 - 0 , 7:44 - C
         self.buffer_size = int(self.rate_mic * self.TIME_TO_PROCESS)
@@ -69,7 +69,7 @@ class OutOfTune:
         self.stream = None
         self.pa = None
         self.matchingToSongBool = False
-        self.CONFIDENCE_LEVEL = 0.95
+        self.CONFIDENCE_LEVEL = 0.9
         self.songName = ""
 
     def freqToNote(self, freq):
@@ -212,15 +212,16 @@ class OutOfTune:
     def read_from_mic(self):
 
         fileData = oot.getNameOfSongFromInput()
-        self.matchingToSongBool = fileData is not None
+        self.matchingToSongBool = type(fileData) is FileData
         self.songName = "tempMic"
-        self.CONFIDENCE_LEVEL = 0.8
         if self.matchingToSongBool:
             print("Comparing to a song!")
             # ensure the time between each note printed is the same as the archived version!
             self.rate_mic = int(fileData.sampleRate)
             self.buffer_size = int(self.rate_mic * fileData.durationToProcess)
             self.songName = fileData.songName + 'Mic'
+        elif type(fileData) is str:
+            self.songName = fileData + 'Mic'
 
         print("Sample Rate: ", self.rate_mic)
 
@@ -228,6 +229,10 @@ class OutOfTune:
 
         # Gets here after the stop button is pushed!
         print("Recording stopped")
+
+
+        print("\n\nFirst version notes")
+        self.removeDuplicatesFromDict(list(self.dictFromMic.keys()), list(self.dictFromMic.values()))
 
 
         record_path = getSongWavPath(self.songName) + '.wav'
@@ -321,7 +326,7 @@ class OutOfTune:
 
 
         #print the result for debug
-        print("\nNotes after filtering\n")
+        print("Notes after filtering:\n")
         for second, freq in result.items():
             currNote = self.freqToNote(freq)
             print(f"{second}: {currNote}")
@@ -348,6 +353,7 @@ class OutOfTune:
         if printGraph:
             self.plotGraphWav(reliable_time, reliable_frequency, reliable_confidence)
 
+        print("\n\nCrepe version notes")
         dict_filtered = self.removeDuplicatesFromDict(reliable_time, reliable_frequency)
 
         fileData = FileData(songName, self.sampleCounter, 0, self.TIME_TO_PROCESS,
@@ -404,7 +410,7 @@ class OutOfTune:
             return fileData
         else:
             print("Song does not exists!")
-            return None
+            return songName
 
 
 def getSongData(file, printBool):
@@ -444,7 +450,7 @@ def compareTest():
 
 if __name__ == "__main__":
     oot = OutOfTune()
-    #oot.read_from_mic()
+    oot.read_from_mic()
 
     printGraph = True
 
@@ -452,7 +458,7 @@ if __name__ == "__main__":
     # getSongData("Twinkle Twinkle Little Star.wav", printGraph)
     #getSongData("Twinkle Twinkle Little Star.wav", printGraph)
 
-    compareTest()
+    #compareTest()
 
     #audio_path = './songsWav/mary.wav'
     #audio_path = './recorded_mary.wav'
