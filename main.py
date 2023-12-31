@@ -28,7 +28,7 @@ class OutOfTune:
         self.detectedWavNotesDict = dict()  # key = sample number , value = freq
         self.dictFromMic = dict()
         self.RATE_MIC = 48000
-        self.TIME_TO_PROCESS = 0.2  # time of each sample...
+        self.TIME_TO_PROCESS = 0.05  # time of each sample...
         self.MIN_TIME_FOR_BREAK = 1.5  # if there is distance of more than this between 2 notes, we put 0 between them
         # for example: 5:20 - D , 5:30 - D , 5:44 - D , 7:44 - C  -> 5:20 - D , 6:44 - 0 , 7:44 - C
         self.BUFFER_SIZE = int(self.RATE_MIC * self.TIME_TO_PROCESS)
@@ -514,10 +514,10 @@ if __name__ == "__main__":
     printGraph = False
 
     # getSongData("Lewis Capaldi - Someone You Loved  ! v=HbVf4eaT9eg.wav", printGraph)
-    #getSongData("mary.wav", printGraph)
+    getSongData("adele easy on me ! v=9-csY039Z64.wav", printGraph)
     #getSongData("Twinkle Twinkle Little Star.wav", printGraph)
 
-    compareTest()
+    #compareTest()
 
 
 
