@@ -342,7 +342,7 @@ class OutOfTune:
         sr, y = wavfile.read(fileName)
 
         # Call crepe to estimate pitch and confidence
-        seconds, frequency, confidence, _ = crepe.predict(y, sr, viterbi=True, model_capacity='full', step_size=20)
+        seconds, frequency, confidence, _ = crepe.predict(y, sr, viterbi=True, model_capacity='full', step_size=10)
 
         # Filter out frequencies with confidence below 0.5
         reliable_indices = confidence >= self.CONFIDENCE_LEVEL
@@ -450,13 +450,11 @@ def compareTest():
 
 if __name__ == "__main__":
     oot = OutOfTune()
-    oot.read_from_mic()
+    #oot.read_from_mic()
 
     printGraph = True
 
-    # getSongData("Lewis Capaldi - Someone You Loved  ! v=HbVf4eaT9eg.wav", printGraph)
-    # getSongData("Twinkle Twinkle Little Star.wav", printGraph)
-    #getSongData("Twinkle Twinkle Little Star.wav", printGraph)
+    getSongData("ed sheeran perfect !.wav", printGraph)
 
     #compareTest()
 
