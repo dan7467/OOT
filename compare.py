@@ -157,6 +157,8 @@ def lcssAndDTW(x, y):
 def inferChunkSize(recording):
     #TO-DO: a helper function that analyzes a recording and returns the recommended CHUNK size for it
 
+def cleanNoises(recording):
+    #TO-DO: a function that cleans unneeded frequencies (noise) from the recording
 
 def compareDTW(micFreq: FileData, archivedFreq: FileData):
 
