@@ -154,6 +154,8 @@ def lcssAndDTW(x, y):
     plt.tight_layout()
     plt.show()
 
+def inferChunkSize(recording):
+    #TO-DO: a helper function that analyzes a recording and returns the recommended CHUNK size for it
 
 
 def compareDTW(micFreq: FileData, archivedFreq: FileData):
