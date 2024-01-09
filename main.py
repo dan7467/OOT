@@ -7,18 +7,21 @@
 # https://github.com/Marcuccio/Musical-note-detector/tree/master
 import math
 import threading
+
+import crepe
 import numpy as np
 from matplotlib import pyplot as plt
 from moviepy.audio.io.AudioFileClip import AudioFileClip
+from scipy.io import wavfile
 from scipy.signal import fftconvolve
 from numpy import argmax, diff
 import time
 import wave
 import pyaudio
-import keyboard
 import tkinter as tk
 
 from compare import compareStrings, compareDTW
+from crepeTest import testCrepe, crepePrediction
 from filesAccess import saveToFile, getDataFromFile, checkIfSongDataExists, getSongWavPath, FileData
 
 
@@ -27,11 +30,11 @@ class OutOfTune:
         self.sampleCounter = 0
         self.detectedWavNotesDict = dict()  # key = sample number , value = freq
         self.dictFromMic = dict()
-        self.RATE_MIC = 48000
-        self.TIME_TO_PROCESS = 0.05  # time of each sample...
+        self.rate_mic = 16000
+        self.TIME_TO_PROCESS = 0.1  # time of each sample...
         self.MIN_TIME_FOR_BREAK = 1.5  # if there is distance of more than this between 2 notes, we put 0 between them
         # for example: 5:20 - D , 5:30 - D , 5:44 - D , 7:44 - C  -> 5:20 - D , 6:44 - 0 , 7:44 - C
-        self.BUFFER_SIZE = int(self.RATE_MIC * self.TIME_TO_PROCESS)
+        self.buffer_size = int(self.rate_mic * self.TIME_TO_PROCESS)
         self.FORMAT = pyaudio.paInt16
         self.soundGate = 19
         self.tunerNotes = {65.41: 'C2', 69.30: 'C#2', 73.42: 'D2', 77.78: 'D#2',
@@ -51,12 +54,7 @@ class OutOfTune:
                            1661.0: 'G#6', 1760.0: 'A6', 1865.0: 'Bb6', 1976.0: 'B6',
                            2093.0: 'C7'}
         self.frequencies = np.array(sorted(self.tunerNotes.keys()))
-        self.start_time = 0  # time.time()
-        # self.pn_len = 3
-        # self.pn_arr = [None for x in range(self.pn_len)]
-        self.pn_single = 'C1'
-        # self.pn_ptr = 0
-        self.curr_acap = "mary.wav"  # will be extended to more than one acapella
+        self.start_time = 0
 
         # Setting for the timer window
         self.root = None
@@ -67,13 +65,48 @@ class OutOfTune:
 
         self.start_flag = False
         self.stop_flag = False
+        self.recorded_frames_crepe = []
+        self.stream = None
+        self.pa = None
+        self.matchingToSongBool = False
+        self.CONFIDENCE_LEVEL = 0.9
+        self.songName = ""
 
     def freqToNote(self, freq):
         if freq == 0:
             return '0'
         return self.tunerNotes[freq]
 
+    def start_timer(self):
+        print("Buffer size: ", self.buffer_size)
+        self.pa = pyaudio.PyAudio()
+        self.stream = self.pa.open(
+            format=self.FORMAT,
+            channels=1,
+            rate=self.rate_mic,
+            output=False,
+            input=True,
+            frames_per_buffer=self.buffer_size,
+            stream_callback=lambda in_data, frame_count, time_info, status_flags:
+            self.callback_mic(in_data, frame_count, time_info, status_flags,
+                              self.matchingToSongBool, self.rate_mic))
+
+        self.stream.start_stream()
+        print("Timer is starting")
+        self.start_flag = True
+        self.start_time = time.time()
+        timer_thread = threading.Thread(target=self.display_timer)
+        timer_thread.start()
+
     def stop_timer(self):
+        self.stream.stop_stream()
+        self.stream.close()
+        self.pa.terminate()
+        self.root.quit()
+
+        if self.recorded_frames_crepe:
+            self.save_in_wav(self.recorded_frames_crepe)
+
         self.stop_flag = True  # Set stop flag to True to stop the microphone input loop
 
     # display timer in a different window
@@ -96,17 +129,11 @@ class OutOfTune:
         elapsed_time = time.time() - self.start_time
         return round(elapsed_time, 3)
 
-        # lines below for a pretty print
-        # Convert the elapsed time to a formatted string
-        # elapsed_seconds = int(elapsed_time % 60)
-        # elapsed_milliseconds = int((elapsed_time - elapsed_seconds) * 1000)
-        # elapsed_minutes = int(elapsed_time // 60)
-        # return f"{elapsed_minutes}:{elapsed_seconds:02}:{elapsed_milliseconds:03}"
-
     # callback with timestamp (mic)
     def callback_mic(self, in_data, frame_count, time_info, status_flags, compareBool, sampleRate):
-        # time_info - to access the timing information
-        # Check status_flags for any errors or termination conditions
+
+        self.recorded_frames_crepe.append(in_data)  # for crepe
+
         # raw_data_signal = np.fromstring( in_data,dtype= np.int16 )
         raw_data_signal = np.frombuffer(in_data, dtype=np.int16)
 
@@ -136,24 +163,6 @@ class OutOfTune:
         curr_note = self.tunerNotes[self.frequencies[targetNote]]
         self.dictFromMic[elapsed_time] = self.frequencies[targetNote]
 
-        #        # 1. Update previous notes array
-        #        self.pn_arr[self.pn_ptr] = curr_note
-        #        self.pn_ptr = (self.pn_ptr + 1) % self.pn_len
-
-        #        # 2. Check if all pn_arr are the same as the singed (by user) note, to make sure it is singed long enough
-        #        if self.sameAsPrevNote(curr_note):
-        #
-        #            # 3a. If needed- announce Note Change
-        #            if self.pn_single != curr_note:
-        #                #print('\t\t\t', self.pn_single, '   - >   ', curr_note)
-        #                self.pn_single = curr_note
-        #
-        #            # 3b. Get singer frequency from acapella ${curr_acap} at the exact moment ${elapsed_time_str}
-        #            # singer_note = getSingerNote(elapsed_time_str)
-        #
-        #            # 3c. compare to find the mistake in percentage
-        #            # err_percentage = self.calculate_Diff_Percentage_From_Original(curr_note, elapsed_time_str)
-
         # Print the note with the elapsed time and error percentage
         print(f"{elapsed_time}: {curr_note}")
 
@@ -161,8 +170,6 @@ class OutOfTune:
 
     # callback with timestamp (wav)
     def callback_wav(self, in_data, frame_count, time_info, status_flags, sampleRate):
-        # time_info - to access the timing information
-        # Check status_flags for any errors or termination conditions
         # raw_data_signal = np.fromstring( in_data,dtype= np.int16 )
         raw_data_signal = np.frombuffer(in_data, dtype=np.int16)
         signal_level = round(abs(self.loudness(raw_data_signal)), 2)  #### find the volume from the audio
@@ -184,7 +191,6 @@ class OutOfTune:
             return raw_data_signal, pyaudio.paContinue
 
         targetnote = self.closest_value_index(self.frequencies, round(inputnote, 2))
-        #self.frequency_data.append(inputnote)
 
         # Save the note sample with the index of the sample. After all the samples are taken, we will calculate the time
         # of the sample according to the index.
@@ -192,91 +198,48 @@ class OutOfTune:
 
         return in_data, pyaudio.paContinue
 
-    def sameAsPrevNote(self, note):
-        for i in range(self.pn_len):
-            if self.pn_arr[i] != note:
-                return False
-        return True
-
-    def getSingerNote(self, timestr):
-        return 0  # TO-DO: Implement this function (Can be done once WAVs can be scanned with no time errors)
-
-    def calculate_Diff_Percentage_From_Original(self, inputnote, timestr):
-        return 0  # TO-DO: Implement this function (Can be done once getSingedNote is finished)
-
     def open_timer_thread(self):
         self.root.mainloop()  # for the timerWindow and main window
-
-    def start_timer(self):
-        print("Timer is starting")
-        self.start_flag = True
-        self.start_time = time.time()
-        timer_thread = threading.Thread(target=self.display_timer)
-        timer_thread.start()
 
     def read_from_mic(self):
 
         fileData = oot.getNameOfSongFromInput()
-        rate1 = self.RATE_MIC
-        bufferSize = self.BUFFER_SIZE
-        compareBool = fileData is not None
-        if compareBool:
+        self.matchingToSongBool = type(fileData) is FileData
+        self.songName = "tempMic"
+        if self.matchingToSongBool:
             print("Comparing to a song!")
             # ensure the time between each note printed is the same as the archived version!
-            rate1 = int(fileData.sampleRate)
-            bufferSize = int(rate1 * fileData.durationToProcess)
+            self.rate_mic = int(fileData.sampleRate)
+            self.buffer_size = int(self.rate_mic * fileData.durationToProcess)
+            self.songName = fileData.songName + 'Mic'
+        elif type(fileData) is str:
+            self.songName = fileData + 'Mic'
 
-        print("Sample Rate: ", rate1)
-
-        pa = pyaudio.PyAudio()
-        stream = pa.open(
-            format=self.FORMAT,
-            channels=1,
-            rate=rate1,
-            output=False,
-            input=True,
-            frames_per_buffer=bufferSize,
-            stream_callback=lambda in_data, frame_count, time_info, status_flags:
-            self.callback_mic(in_data, frame_count, time_info, status_flags,
-                              compareBool, rate1))  # Modify this line
-        # stream_callback=self.callback_mic)
-
-        stream.start_stream()
+        print("Sample Rate: ", self.rate_mic)
 
         oot.open_timer_thread()
-
-        # # I don't think this lines work... it is not useful
-        # while not self.stop_flag:
-        #     if self.stop_flag:
-        #         break  # Break out of the loop if the stop flag is set
-        #     time.sleep(0.1)
 
         # Gets here after the stop button is pushed!
         print("Recording stopped")
 
-        name = fileData.songName + "Mic"
+        print("\n\nFirst version notes")
+        self.removeDuplicatesFromDict(list(self.dictFromMic.keys()), list(self.dictFromMic.values()))
 
-        filteredDict = self.removeDuplicatesFromDict(self.dictFromMic)
-        self.dictFromMic = filteredDict
+        record_path = getSongWavPath(self.songName) + '.wav'
 
-        fileData = FileData(name, 0, 0, 0.2, 0, self.dictFromMic)
-        saveToFile(fileData)   #for debugging
+        # Until here we saved the recorded in a wav file, now we analyze it and save the data!
 
-        stream.stop_stream()
-        stream.close()
-        pa.terminate()
+        self.read_from_wav(record_path, True)
 
-    # Function to stop the streaming and display the graph
-    def stop_and_display_graph(self):
-        global stop_streaming
-        stop_streaming = True
-        plt.figure(figsize=(12, 6))
-        #plt.plot(self.time_data, self.frequency_data)
-        plt.xlabel('Time (seconds)')
-        plt.ylabel('Frequency (Hz)')
-        plt.title('Time vs. Frequency')
-        plt.grid(True)
-        plt.show()
+    def save_in_wav(self, frames):
+        file_path = getSongWavPath(self.songName) + '.wav'
+
+        wf = wave.open(file_path, 'wb')
+        wf.setnchannels(1)
+        wf.setsampwidth(self.pa.get_sample_size(pyaudio.paInt16))
+        wf.setframerate(self.rate_mic)
+        wf.writeframes(b''.join(frames))
+        wf.close()
 
     # See https://github.com/endolith/waveform-analyzer/blob/master/frequency_estimator.py
     def freq_from_autocorr(self, raw_data_signal, fs):
@@ -330,125 +293,86 @@ class OutOfTune:
 
         return indexArray[0][0]
 
-    def check_space_key(self):
-        while True:
-            if keyboard.is_pressed('space'):
-                self.stop_timer()
-                break
-            time.sleep(0.1)
-
-    def removeDuplicatesFromDict(self, freqDict):
+    def removeDuplicatesFromDict(self, seconds, freqs):
         result = dict()
 
         lastSecond = 0
         lastFreq = 0
-        for currSecond, currFreq in freqDict.items():
-            if currSecond - lastSecond > self.MIN_TIME_FOR_BREAK:      #silence in original song
-                result[lastSecond + self.MIN_TIME_FOR_BREAK/2] = 0
+        for currSecond, currFreq in zip(seconds, freqs):
+            currFreq = self.frequencies[self.closest_value_index(self.frequencies, currFreq)]
+            currSecond = round(currSecond, 3)
+            if currSecond - lastSecond > self.MIN_TIME_FOR_BREAK:  # silence in original song
+                result[lastSecond + self.MIN_TIME_FOR_BREAK / 2] = 0
                 result[currSecond] = currFreq
                 lastFreq = currFreq
-            elif currFreq != lastFreq:                                                      #the note had changed
+            elif currFreq != lastFreq:  # the note had changed
                 result[currSecond] = currFreq
                 lastFreq = currFreq
             # if currFreq = lastFreq we don't need to save it, because before is the same
             lastSecond = currSecond
 
-
-        #print the result for debug
-        print("\nNotes after filtering\n")
+        # print the result for debug
+        print("Notes after filtering:\n")
         for second, freq in result.items():
             currNote = self.freqToNote(freq)
             print(f"{second}: {currNote}")
 
-
         return result
 
+    def read_from_wav(self, fileName, printGraph):
 
+        songName = fileName.split('/')[-1].split('.')[0]
+        sr, y = wavfile.read(fileName)
 
-    def read_from_wav(self, file, printGraph):
-        # Increase the CHUNK is lowering the sampling rate
-        # CHUNK = 4096  # if its 4096 it works good for mary and not for retroGame. If its 512 it works for both, but
-        # for mary.wav it's a lot of samples. in 512 it's not working for vincent. Why?
+        #save the data to file and image of the graph
+        #crepe.process_file(fileName, viterbi=True, model_capacity='full', step_size=10,
+        #                   save_plot=True, plot_voicing=True, save_activation=True)
 
-        wf = wave.open(file, 'rb')
+        # Call crepe to estimate pitch and confidence
+        seconds, frequency, confidence, _ = crepe.predict(y, sr, viterbi=True, model_capacity='full', step_size=10)
 
-        # CHUNK represents the number of frames read at a time from the audio file
-        # wf.getframerate() is number of frames per second.
-        sampleRate = wf.getframerate()
-        CHUNK = int(sampleRate * self.TIME_TO_PROCESS)
-
-        print("Sample Rate: ", sampleRate)
-
-        data = wf.readframes(CHUNK)
-        while data != b'':
-            data = wf.readframes(CHUNK)  # it should be at the end of the while?
-            self.callback_wav(data, 256, 0, 0, sampleRate)
-        songName = file.split('/')[-1].split('.')[0]
-
-        secondsList, freqList, recordingLenSeconds = self.calcNotesWithTime(wf)
-
-        resultDict = dict()
-        for currSecond, currFreq in zip(secondsList, freqList):
-            resultDict[currSecond] = currFreq
-
-        dict_filtered = self.removeDuplicatesFromDict(resultDict)
-
-        # Commented only to debug faster, remove comment...
-        fileData = FileData(songName, self.sampleCounter, recordingLenSeconds, self.TIME_TO_PROCESS,
-                            sampleRate, dict_filtered)
-        saveToFile(fileData)
-
-        secondsList = dict_filtered.keys()
-        freqList = dict_filtered.values()
+        # Filter out frequencies with confidence below 0.5
+        reliable_indices = confidence >= self.CONFIDENCE_LEVEL
+        reliable_confidence = confidence[reliable_indices]
+        reliable_time = seconds[reliable_indices]
+        reliable_frequency = frequency[reliable_indices]
 
         if printGraph:
-            self.plotGraphWav(secondsList, freqList)
+            self.plotGraphWav(reliable_time, reliable_frequency, reliable_confidence)
 
-    def calcNotesWithTime(self, wf):
-        # Calculate samples taken and convert to time:
-        samplesCounter = self.sampleCounter
-        recordingLenSeconds = wf.getnframes() / wf.getframerate()
-        timeOfEachSample = recordingLenSeconds / samplesCounter
+        print("\n\nCrepe version notes")
+        dict_filtered = self.removeDuplicatesFromDict(reliable_time, reliable_frequency)
 
-        # ADDED print(f"wf.getnframes() : {wf.getnframes()},  wf.getframerate(): {wf.getframerate()}")  #From where
-        # are those numbers?
-        print(f"Num of Samples: my calc: {samplesCounter}")
-        print("Time of recording: ", recordingLenSeconds)
-        print(f"Time of each samples: {timeOfEachSample}")
-        print(f"Sample Rate: {wf.getframerate()}")
+        fileData = FileData(songName, self.sampleCounter, 0, self.TIME_TO_PROCESS,
+                            self.rate_mic, dict_filtered)
 
-        # ADDED
-        for currTime in self.detectedWavNotesDict:
-            elapsed_time_str = self.calcTimeForWav(currTime * timeOfEachSample)
-            freq = self.detectedWavNotesDict[currTime]
-            currNote = self.tunerNotes[freq]
-            print(f"{elapsed_time_str}: {currNote}")
+        saveToFile(fileData)
 
-        # ADDED
-        # Remove from comment when the samples rate is Smaller
-        secondsList = [round(key * timeOfEachSample, 3) for key in self.detectedWavNotesDict]
+    def plotGraphWav(self, seconds, freq, confidence):
 
-        return secondsList, self.detectedWavNotesDict.values(), recordingLenSeconds
+        # Create two separate plots for estimated pitch and confidence
+        fig, axs = plt.subplots(2, 1, figsize=(10, 8))
 
-    def plotGraphWav(self, xTime, yFreq):
-        fig = plt.figure(figsize=(18, 6))
-        ax = fig.add_subplot(111)
-        ax.plot(xTime, yFreq)
+        # Plot the estimated pitch over time
+        axs[0].plot(seconds, freq, label='Estimated pitch (Hz)', color='blue')
+        axs[0].set_xlabel('Time (s)')
+        axs[0].set_ylabel('Frequency (Hz)')
+        axs[0].set_title('Estimated Pitch')
+        axs[0].legend()
 
-        plt.xlabel('Time (s)')
-        plt.ylabel('Frequency (Hz)')
-        plt.title('Time vs. Frequency')
-        plt.grid(True)
-        yAxis = list(yFreq)
-        plt.yticks(yAxis)
-        ax.set_yticklabels([self.tunerNotes[y] + f" ({str(y)}Hz) " for y in yAxis])
+        # Plot the confidence over time
+        axs[1].plot(seconds, confidence, label='Confidence', color='green')
+        axs[1].set_xlabel('Time (s)')
+        axs[1].set_ylabel('Confidence')
+        axs[1].set_title('Confidence')
+        axs[1].legend()
+
+        plt.tight_layout()
         plt.show()
 
-    def calcTimeForWav(self, elapsed_time):
-        elapsed_seconds = int(elapsed_time % 60)
-        elapsed_minutes = int(elapsed_time // 60)
-        elapsed_milliseconds = int(((elapsed_time - elapsed_seconds) % 60) * 1000)
-        return f"{elapsed_minutes}:{elapsed_seconds:02}:{elapsed_milliseconds:03}"
+        fig.savefig('wavGraph.png')
+
+        return
 
     def setTimerWindowButtons(self):
         self.root = tk.Tk()
@@ -469,7 +393,7 @@ class OutOfTune:
             return fileData
         else:
             print("Song does not exists!")
-            return None
+            return songName
 
 
 def getSongData(file, printBool):
@@ -500,52 +424,21 @@ def compareTest():
 
     compareDTW(micSongData, archivedSongData)
 
-
-    micString = listToString(micSongData.getFrequencies())
-#    archivedString = listToString(archivedSongData.getFrequencies())
-
-#    compareStrings(micString, archivedString)
+    #micString = listToString(micSongData.getFrequencies())
+    #archivedString = listToString(archivedSongData.getFrequencies())
+    #compareStrings(micString, archivedString)
 
 
 if __name__ == "__main__":
     oot = OutOfTune()
     #oot.read_from_mic()
 
-    printGraph = False
+    printGraph = True
 
-    # getSongData("Lewis Capaldi - Someone You Loved  ! v=HbVf4eaT9eg.wav", printGraph)
-    getSongData("adele easy on me ! v=9-csY039Z64.wav", printGraph)
-    #getSongData("Twinkle Twinkle Little Star.wav", printGraph)
+    #getSongData("mary.wav", printGraph)
 
-    #compareTest()
+    compareTest()
 
-
-
-
-
-
-
-
-
-
-    # def convertMp3ToWav(self, input_file):
-    #     inputName = input_file[:-4]
-    #     output_file = "C:/Fun projects/testingMusicalProject/" + inputName + ".wav"
-    #
-    #     # # convert mp3 file to wav file
-    #     inputWithPath = "C:/Fun projects/testingMusicalProject/" + input_file
-    #     # sound = AudioSegment.from_mp3(inputWithPath)
-    #     # sound.export(output_file, format="wav")
-    #
-    #     # subprocess.call(['ffmpeg', '-i', input_file, output_file])
-    #
-    # def convertMp3ToWav2(self, input_mp3):
-    #
-    #     # Output WAV file path
-    #     output_wav = input_mp3[:-4] + ".wav"
-    #
-    #     # Load the MP3 file as a video clip (audio only)
-    #     clip = AudioFileClip(input_mp3)
-    #
-    #     # Write the audio to a WAV file
-    #     clip.write_audiofile(output_wav)
+    # audio_path = './songsWav/mary.wav'
+    # audio_path = './recorded_mary.wav'
+    # testCrepe(audio_path)
