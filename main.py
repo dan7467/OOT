@@ -305,6 +305,8 @@ class OutOfTune:
             #     chunk = array[i:i + chunk_size]
             #     print("Chunk", i // chunk_size + 1, ":", chunk)
 
+            #chunkSeconds = seconds[i:i + chunk_size], chunkFreqs = freqs[i:i + chunk_size]
+
             # This will take the following 10 elements
             # For them we need to round them with closest value of freq, and then choose the majority between them
             # after that we need to update the currSeconds and currFreq to be the majority Vote and the
