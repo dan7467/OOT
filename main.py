@@ -299,6 +299,17 @@ class OutOfTune:
         lastSecond = 0
         lastFreq = 0
         for currSecond, currFreq in zip(seconds, freqs):
+
+            # chunk_size = 10
+            # for i in range(0, len(array), chunk_size):
+            #     chunk = array[i:i + chunk_size]
+            #     print("Chunk", i // chunk_size + 1, ":", chunk)
+
+            # This will take the following 10 elements
+            # For them we need to round them with closest value of freq, and then choose the majority between them
+            # after that we need to update the currSeconds and currFreq to be the majority Vote and the
+            # time to be his time. And after this we just continue with the rest of the function
+
             currFreq = self.frequencies[self.closest_value_index(self.frequencies, currFreq)]
             currSecond = round(currSecond, 3)
             if currSecond - lastSecond > self.MIN_TIME_FOR_BREAK:  # silence in original song
@@ -348,6 +359,9 @@ class OutOfTune:
 
         saveToFile(fileData)
 
+
+
+
     def plotGraphWav(self, seconds, freq, confidence):
 
         # Create two separate plots for estimated pitch and confidence
@@ -395,6 +409,9 @@ class OutOfTune:
             print("Song does not exists!")
             return songName
 
+    def filterNoise(self, reliable_time, reliable_frequency):
+        pass
+
 
 def getSongData(file, printBool):
     songName = file.split('.')[0]
@@ -435,9 +452,9 @@ if __name__ == "__main__":
 
     printGraph = True
 
-    #getSongData("mary.wav", printGraph)
+    getSongData("mary.wav", printGraph)
 
-    compareTest()
+    #compareTest()
 
     # audio_path = './songsWav/mary.wav'
     # audio_path = './recorded_mary.wav'
