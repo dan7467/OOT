@@ -7,6 +7,7 @@
 # https://github.com/Marcuccio/Musical-note-detector/tree/master
 import math
 import threading
+from collections import Counter
 
 import crepe
 import numpy as np
@@ -295,24 +296,23 @@ class OutOfTune:
 
     def removeDuplicatesFromDict(self, seconds, freqs):
         result = dict()
-
+        chunk_size = 10
         lastSecond = 0
         lastFreq = 0
-        for currSecond, currFreq in zip(seconds, freqs):
+        freqsLen = len(freqs)
+        for i in range(0, freqsLen, chunk_size):
+            endIndex = min(i+chunk_size, freqsLen - 1)      #so it will not overflow
 
-            # chunk_size = 10
-            # for i in range(0, len(array), chunk_size):
-            #     chunk = array[i:i + chunk_size]
-            #     print("Chunk", i // chunk_size + 1, ":", chunk)
+            chunkFreqs = freqs[i:endIndex]
+            chunkFreqs = [self.frequencies[self.closest_value_index(self.frequencies, curr)] for curr in chunkFreqs]
 
-            #chunkSeconds = seconds[i:i + chunk_size], chunkFreqs = freqs[i:i + chunk_size]
+            # Count occurrences of each element in the list
+            element_counts = Counter(chunkFreqs)
 
-            # This will take the following 10 elements
-            # For them we need to round them with closest value of freq, and then choose the majority between them
-            # after that we need to update the currSeconds and currFreq to be the majority Vote and the
-            # time to be his time. And after this we just continue with the rest of the function
+            # Get the element with the maximum occurrence
+            currFreq = element_counts.most_common(1)[0][0]
+            currSecond = (seconds[i] + seconds[endIndex]) / 2
 
-            currFreq = self.frequencies[self.closest_value_index(self.frequencies, currFreq)]
             currSecond = round(currSecond, 3)
             if currSecond - lastSecond > self.MIN_TIME_FOR_BREAK:  # silence in original song
                 result[lastSecond + self.MIN_TIME_FOR_BREAK / 2] = 0
@@ -454,7 +454,7 @@ if __name__ == "__main__":
 
     printGraph = True
 
-    getSongData("mary.wav", printGraph)
+    getSongData("maryMic.wav", printGraph)
 
     #compareTest()
 
