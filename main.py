@@ -330,6 +330,12 @@ class OutOfTune:
             currNote = self.freqToNote(freq)
             print(f"{second}: {currNote}")
 
+        plt.plot(result.keys(), result.values())
+        plt.title("After chunk filtering")
+        plt.legend()
+        plt.show()
+        plt.savefig("FilteredGraph")
+
         return result
 
     def read_from_wav(self, fileName, printGraph):
