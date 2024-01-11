@@ -24,7 +24,7 @@ import tkinter as tk
 from compare import compareStrings, compareDTW
 from crepeTest import testCrepe, crepePrediction
 from filesAccess import saveToFile, getDataFromFile, checkIfSongDataExists, getSongWavPath, FileData
-
+from numba import jit, cuda
 
 class OutOfTune:
     def __init__(self):
@@ -71,6 +71,7 @@ class OutOfTune:
         self.pa = None
         self.matchingToSongBool = False
         self.CONFIDENCE_LEVEL = 0.9
+        self.CREPE_STEP_SIZE = 10   #in milliseconds
         self.songName = ""
 
     def freqToNote(self, freq):
@@ -296,7 +297,10 @@ class OutOfTune:
 
     def removeDuplicatesFromDict(self, seconds, freqs):
         result = dict()
-        chunk_size = 10
+        time_for_each_chunk = 0.1  #the time of each chunk (in seconds)
+        chunk_size = int(time_for_each_chunk / (self.CREPE_STEP_SIZE * 0.001))
+        #example : step_size = 20 (its in ms) and we want the chunk to hold data of 0.1 seconds,
+        #so the size will be  0.1 / 0.001*20 = 5
         lastSecond = 0
         lastFreq = 0
         freqsLen = len(freqs)
@@ -310,7 +314,10 @@ class OutOfTune:
             element_counts = Counter(chunkFreqs)
 
             # Get the element with the maximum occurrence
-            currFreq = element_counts.most_common(1)[0][0]
+            mostCommon = element_counts.most_common(1)
+            if len(mostCommon) == 0:
+                continue
+            currFreq = mostCommon[0][0]
             currSecond = (seconds[i] + seconds[endIndex]) / 2
 
             currSecond = round(currSecond, 3)
@@ -347,8 +354,8 @@ class OutOfTune:
         #crepe.process_file(fileName, viterbi=True, model_capacity='full', step_size=10,
         #                   save_plot=True, plot_voicing=True, save_activation=True)
 
-        # Call crepe to estimate pitch and confidence
-        seconds, frequency, confidence, _ = crepe.predict(y, sr, viterbi=True, model_capacity='full', step_size=10)
+
+        seconds, frequency, confidence, _ = self.runCrepePrediction(y, sr)
 
         # Filter out frequencies with confidence below 0.5
         reliable_indices = confidence >= self.CONFIDENCE_LEVEL
@@ -367,7 +374,11 @@ class OutOfTune:
 
         saveToFile(fileData)
 
-
+    @jit(target_backend='cuda')
+    def runCrepePrediction(self, y, sr):
+        # Call crepe to estimate pitch and confidence
+        # , viterbi=True, step_size=10
+        return crepe.predict(y, sr, model_capacity='full', step_size=self.CREPE_STEP_SIZE)
 
 
     def plotGraphWav(self, seconds, freq, confidence):
@@ -460,7 +471,8 @@ if __name__ == "__main__":
 
     printGraph = True
 
-    getSongData("maryMic.wav", printGraph)
+    getSongData("ed sheeran perfect !.wav", printGraph)
+    #getSongData("mary.wav", printGraph)
 
     #compareTest()
 
