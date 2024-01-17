@@ -115,7 +115,7 @@ def dtwParallelTest(x, y):  # Slow
     print(result)
 
 
-def printNotesMatches(x, y, path):
+def printNotesMatches(x, y, path, xTime, yTime):
     matched0 = [position[0] for position in path]
     notMatched0 = [i for i in range(matched0[-1]) if i not in matched0]
 
@@ -126,7 +126,9 @@ def printNotesMatches(x, y, path):
 
     # print the matches of lcss
     for positions in path:
-        print(f'x[{positions[0]}] = {x[positions[0]]} , {y[positions[1]]} = y[{positions[1]}]')
+        xIndex = positions[0]
+        yIndex = positions[1]
+        print(f'x[{xIndex}] = {x[xIndex]} , {y[yIndex]} = y[{yIndex}].      Times: {xTime[xIndex]} - {yTime[yIndex]}')
 
     print("\nUnmatched notes\n")
 
@@ -139,7 +141,7 @@ def printNotesMatches(x, y, path):
 
 # LCSS LOOKS GOOD  !!!! , works better than dtw
 # https://tslearn.readthedocs.io/en/stable/auto_examples/metrics/plot_lcss.html#sphx-glr-auto-examples-metrics-plot-lcss-py:~:text=Longest%20Common%20Subsequence%C2%B6
-def lcssAndDTW(x, y):
+def lcssAndDTW(x, y, xTime, yTime):
     # Do I need to normalize it? yse a scaler like the example from the link?
 
     # Calculate LCSS path and similarity
@@ -170,10 +172,10 @@ def lcssAndDTW(x, y):
                  [x[positions[0]], y[positions[1]]], color='orange')
 
     print("DTW PATH")
-    printNotesMatches(x, y, dtw_path)
+    printNotesMatches(x, y, dtw_path, xTime, yTime)
 
     print("LCSS PATH")
-    printNotesMatches(x, y, lcss_path)
+    printNotesMatches(x, y, lcss_path, xTime, yTime)
 
     plt.legend()
     plt.title("Time series matching with DTW")
@@ -184,14 +186,16 @@ def lcssAndDTW(x, y):
     x_path = [i[0] for i in dtw_path]
     y_path = [i[1] for i in dtw_path]
 
-    plt.plot(x[x_path], label="aligned query")
-    plt.plot(y[y_path], label="aligned reference")
+
+    plt.plot(x[x_path], label="aligned query (x)")
+    plt.plot(y[y_path], label="aligned reference (y)")
+    plt.legend()
     plt.title("Matching with DTW, Aligned Graphs")
     plt.show()
 
 
 #https://htmlpreview.github.io/?https://github.com/statefb/dtwalign/blob/master/example/example.html#:~:text=Utilities-,Basic%20Usage,-%C2%B6
-def dtwAlignTest(x, y):
+def dtwAlignTest(x, y, xTime, yTime):
     res = dtwAlignFunc(x, y)
     print("dtw distance: {}".format(res.distance))
     print("dtw normalized distance: {}".format(res.normalized_distance))
@@ -206,7 +210,7 @@ def dtwAlignTest(x, y):
     plt.legend()
     plt.show()
 
-    printNotesMatches(x, y, res.path)
+    printNotesMatches(x, y, res.path, xTime, yTime)
 
 
 
@@ -214,7 +218,9 @@ def compareDTW(micFreq: FileData, archivedFreq: FileData):
     # I can try different distances (cosine, euclidean, norm1...)
 
     x = micFreq.getFrequencies()
+    xTime = micFreq.getSecondsList()
     y = archivedFreq.getFrequencies()
+    yTime = archivedFreq.getSecondsList()
 
     x = np.array([float(curr) for curr in x])
     y = np.array([float(curr) for curr in y])
@@ -222,7 +228,7 @@ def compareDTW(micFreq: FileData, archivedFreq: FileData):
     # fastDTWTest(x, y)
     # dtwvisTest(x, y)
     # dtwParallelTest(x, y)
-    lcssAndDTW(x, y)
-    #dtwAlignTest(x, y)
+    lcssAndDTW(x, y, xTime, yTime)
+    #dtwAlignTest(x, y, xTime, yTime)
 
     return

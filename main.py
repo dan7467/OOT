@@ -31,11 +31,13 @@ class OutOfTune:
         self.sampleCounter = 0
         self.detectedWavNotesDict = dict()  # key = sample number , value = freq
         self.dictFromMic = dict()
-        self.rate_mic = 16000
-        self.TIME_TO_PROCESS = 0.1  # time of each sample...
+        self.rate_mic = 44000
+        #self.buffer_size = int(self.rate_mic * self.TIME_TO_PROCESS)
+        #self.TIME_TO_PROCESS = 0.05  # time of each sample...
+        self.buffer_size = 3072
+        self.TIME_TO_PROCESS = self.buffer_size / self.rate_mic
         self.MIN_TIME_FOR_BREAK = 1.5  # if there is distance of more than this between 2 notes, we put 0 between them
         # for example: 5:20 - D , 5:30 - D , 5:44 - D , 7:44 - C  -> 5:20 - D , 6:44 - 0 , 7:44 - C
-        self.buffer_size = int(self.rate_mic * self.TIME_TO_PROCESS)
         self.FORMAT = pyaudio.paInt16
         self.soundGate = 19
         self.tunerNotes = {65.41: 'C2', 69.30: 'C#2', 73.42: 'D2', 77.78: 'D#2',
@@ -80,7 +82,7 @@ class OutOfTune:
         return self.tunerNotes[freq]
 
     def start_timer(self):
-        print("Buffer size: ", self.buffer_size)
+        #print("Buffer size: ", self.buffer_size)
         self.pa = pyaudio.PyAudio()
         self.stream = self.pa.open(
             format=self.FORMAT,
@@ -225,7 +227,7 @@ class OutOfTune:
         print("Recording stopped")
 
         print("\n\nFirst version notes")
-        self.removeDuplicatesFromDict(list(self.dictFromMic.keys()), list(self.dictFromMic.values()))
+        self.removeDuplicatesFromDict(list(self.dictFromMic.keys()), list(self.dictFromMic.values()), False)
 
         record_path = getSongWavPath(self.songName) + '.wav'
 
@@ -295,10 +297,15 @@ class OutOfTune:
 
         return indexArray[0][0]
 
-    def removeDuplicatesFromDict(self, seconds, freqs):
+    def removeDuplicatesFromDict(self, seconds, freqs, crepeBool):
         result = dict()
-        time_for_each_chunk = 0.1  #the time of each chunk (in seconds)
-        chunk_size = int(time_for_each_chunk / (self.CREPE_STEP_SIZE * 0.001))
+        if crepeBool:
+            time_for_each_chunk = 0.1  #the time of each chunk (in seconds)
+            chunk_size = int(time_for_each_chunk / (self.CREPE_STEP_SIZE * 0.001))
+        else:
+            time_for_each_chunk = 0.1
+            chunk_size = int(time_for_each_chunk / self.TIME_TO_PROCESS)
+
         #example : step_size = 20 (its in ms) and we want the chunk to hold data of 0.1 seconds,
         #so the size will be  0.1 / 0.001*20 = 5
         lastSecond = 0
@@ -367,7 +374,7 @@ class OutOfTune:
             self.plotGraphWav(reliable_time, reliable_frequency, reliable_confidence)
 
         print("\n\nCrepe version notes")
-        dict_filtered = self.removeDuplicatesFromDict(reliable_time, reliable_frequency)
+        dict_filtered = self.removeDuplicatesFromDict(reliable_time, reliable_frequency, True)
 
         fileData = FileData(songName, self.sampleCounter, 0, self.TIME_TO_PROCESS,
                             self.rate_mic, dict_filtered)
@@ -454,9 +461,9 @@ def listToString(freqList):
 
 
 def compareTest():
-    archivedSongData = getDataFromFile("mary")
+    archivedSongData = getDataFromFile("testingSinging3Mic")
 
-    micSongData = getDataFromFile("maryMic")
+    micSongData = getDataFromFile("testingSingingMic")
 
     compareDTW(micSongData, archivedSongData)
 
@@ -471,11 +478,12 @@ if __name__ == "__main__":
 
     printGraph = True
 
-    getSongData("ed sheeran perfect !.wav", printGraph)
+    #getSongData("ed sheeran perfect !.wav", printGraph)
     #getSongData("mary.wav", printGraph)
 
-    #compareTest()
+    compareTest()
 
     # audio_path = './songsWav/mary.wav'
     # audio_path = './recorded_mary.wav'
     # testCrepe(audio_path)
+
