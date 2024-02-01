@@ -73,7 +73,7 @@ class OutOfTune:
         self.pa = None
         self.matchingToSongBool = False
         self.CONFIDENCE_LEVEL = 0.9
-        self.CREPE_STEP_SIZE = 10   #in milliseconds
+        self.CREPE_STEP_SIZE = 30   #in milliseconds
         self.songName = ""
 
     def freqToNote(self, freq):
@@ -376,7 +376,7 @@ class OutOfTune:
         print("\n\nCrepe version notes")
         dict_filtered = self.removeDuplicatesFromDict(reliable_time, reliable_frequency, True)
 
-        fileData = FileData(songName, self.sampleCounter, 0, self.TIME_TO_PROCESS,
+        fileData = FileData(songName, self.sampleCounter, 0, round(self.TIME_TO_PROCESS, 4),
                             self.rate_mic, dict_filtered)
 
         saveToFile(fileData)
@@ -461,9 +461,9 @@ def listToString(freqList):
 
 
 def compareTest():
-    archivedSongData = getDataFromFile("testingSinging3Mic")
+    archivedSongData = getDataFromFile("mary")
 
-    micSongData = getDataFromFile("testingSingingMic")
+    micSongData = getDataFromFile("maryMic2XSpeed")
 
     compareDTW(micSongData, archivedSongData)
 
@@ -474,6 +474,7 @@ def compareTest():
 
 if __name__ == "__main__":
     oot = OutOfTune()
+
     #oot.read_from_mic()
 
     printGraph = True
