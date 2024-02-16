@@ -55,23 +55,6 @@ def compareDicts(originalDict, recordDict):
     #         break
 
 
-#https://docs.python.org/3/library/difflib.html#:~:text=4%2C%20size%3D0)%5D-,get_opcodes()%C2%B6,-Return%20list%20of
-def compareStrings(micString, archivedString):
-    # a = "qabxcd"
-    # b = "abycdf"
-    # s = SequenceMatcher(None, a, b)
-    # for tag, i1, i2, j1, j2 in s.get_opcodes():
-    #     print('{:7}   a[{}:{}] --> b[{}:{}] {!r:>8} --> {!r}'.format(
-    #         tag, i1, i2, j1, j2, a[i1:i2], b[j1:j2]))
-
-    s = SequenceMatcher(None, archivedString, micString)
-    #isNum = lambda x: x in {'1', '2', '3', '4', '5', '6', '7', '8', '9'}
-    #s = SequenceMatcher(isNum, archivedString, micString) #this is supposed to ignore the numbers, don't work so well
-    for tag, i1, i2, j1, j2 in s.get_opcodes():
-        print('{:7}   archived[{}:{}] --> mic[{}:{}] {!r:>8} --> {!r}'.format(
-            tag, i1, i2, j1, j2, archivedString[i1:i2], micString[j1:j2]))
-    return
-
 
 # https://discord.com/channels/1183328278983999579/1184833831686111365/1186322859036000437
 def fastDTWTest(x, y):
@@ -144,24 +127,13 @@ def printNotesMatches(x, y, path, xTime, yTime):
 def lcssAndDTW(x, y, xTime, yTime):
     # Do I need to normalize it? yse a scaler like the example from the link?
 
-    # Calculate LCSS path and similarity
-    lcss_path, sim_lcss = metrics.lcss_path(x, y)
-    # lcss_path, sim_lcss = metrics.lcss_path(x, y, eps=1.5)   #check what is eps
-
     # Calculate DTW path and similarity
     dtw_path, sim_dtw = metrics.dtw_path(x, y, sakoe_chiba_radius=1)
 
     # Plotting
     plt.figure(figsize=(8, 8))
 
-    plt.plot(x, "r-", label='First time series')
-    plt.plot(y, color='black', linestyle='--', label='Second time series')
-
-    for positions in lcss_path:
-        plt.plot([positions[0], positions[1]],
-                 [x[positions[0]], y[positions[1]]], color='orange')
-    plt.legend()
-    plt.title("Time series matching with LCSS")
+    lcssPlot(x, y, xTime, yTime)
 
     plt.figure(figsize=(8, 8))
     plt.plot(x, "r-", label='First time series')
@@ -174,9 +146,6 @@ def lcssAndDTW(x, y, xTime, yTime):
     print("DTW PATH")
     printNotesMatches(x, y, dtw_path, xTime, yTime)
 
-    print("LCSS PATH")
-    printNotesMatches(x, y, lcss_path, xTime, yTime)
-
     plt.legend()
     plt.title("Time series matching with DTW")
 
@@ -187,11 +156,34 @@ def lcssAndDTW(x, y, xTime, yTime):
     y_path = [i[1] for i in dtw_path]
 
 
-    plt.plot(x[x_path], label="aligned query (x)")
-    plt.plot(y[y_path], label="aligned reference (y)")
+    plt.plot(x[x_path], label="mic (x)")
+    plt.plot(y[y_path], label="original (y)")
     plt.legend()
     plt.title("Matching with DTW, Aligned Graphs")
     plt.show()
+
+
+def lcssPlot(x, y, xTime, yTime):
+    # Calculate LCSS path and similarity
+    lcss_path, sim_lcss = metrics.lcss_path(x, y)
+    #This is with times
+    # plt.plot(xTime, x, "r-", label='First time series')
+    # plt.plot(yTime, y, color='black', linestyle='--', label='Second time series')
+    # for positions in lcss_path:
+    #     plt.plot([xTime[positions[0]], yTime[positions[1]]],
+    #              [x[positions[0]], y[positions[1]]], color='orange')
+
+    plt.plot(x, "r-", label='First time series')
+    plt.plot(y, color='black', linestyle='--', label='Second time series')
+    for positions in lcss_path:
+        plt.plot([positions[0], positions[1]],
+                 [x[positions[0]], y[positions[1]]], color='orange')
+
+    plt.legend()
+    plt.title("Time series matching with LCSS")
+
+    print("LCSS PATH")
+    printNotesMatches(x, y, lcss_path, xTime, yTime)
 
 
 #https://htmlpreview.github.io/?https://github.com/statefb/dtwalign/blob/master/example/example.html#:~:text=Utilities-,Basic%20Usage,-%C2%B6
@@ -226,8 +218,8 @@ def compareDTW(micFreq: FileData, archivedFreq: FileData):
     y = np.array([float(curr) for curr in y])
 
     # fastDTWTest(x, y)
-    # dtwvisTest(x, y)
-    # dtwParallelTest(x, y)
+    #dtwvisTest(x, y)            #prints graph
+    #dtwParallelTest(x, y)
     lcssAndDTW(x, y, xTime, yTime)
     #dtwAlignTest(x, y, xTime, yTime)
 

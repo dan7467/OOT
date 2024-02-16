@@ -21,7 +21,7 @@ import wave
 import pyaudio
 import tkinter as tk
 
-from compare import compareStrings, compareDTW
+from compare import compareDTW
 from crepeTest import testCrepe, crepePrediction
 from filesAccess import saveToFile, getDataFromFile, checkIfSongDataExists, getSongWavPath, FileData
 from numba import jit, cuda
@@ -31,12 +31,18 @@ class OutOfTune:
         self.sampleCounter = 0
         self.detectedWavNotesDict = dict()  # key = sample number , value = freq
         self.dictFromMic = dict()
-        self.rate_mic = 44000
-        #self.buffer_size = int(self.rate_mic * self.TIME_TO_PROCESS)
-        #self.TIME_TO_PROCESS = 0.05  # time of each sample...
-        self.buffer_size = 3072
-        self.TIME_TO_PROCESS = self.buffer_size / self.rate_mic
-        self.MIN_TIME_FOR_BREAK = 1.5  # if there is distance of more than this between 2 notes, we put 0 between them
+
+        self.rate_mic = 16000
+        self.TIME_TO_PROCESS = 0.1  # time of each sample...
+        self.buffer_size = int(self.rate_mic * self.TIME_TO_PROCESS)
+
+        # self.rate_mic = 44000
+        # self.buffer_size = 4096  #= CHUNK size
+        # self.TIME_TO_PROCESS = self.buffer_size / self.rate_mic
+
+        #if we want to do time_to_process = 0.25s then we need (buffer_size)4096/16,000(RATE) ~ 0.25
+
+        self.MIN_TIME_FOR_BREAK = 3  # if there is distance of more than this between 2 notes, we put 0 between them
         # for example: 5:20 - D , 5:30 - D , 5:44 - D , 7:44 - C  -> 5:20 - D , 6:44 - 0 , 7:44 - C
         self.FORMAT = pyaudio.paInt16
         self.soundGate = 19
@@ -73,7 +79,9 @@ class OutOfTune:
         self.pa = None
         self.matchingToSongBool = False
         self.CONFIDENCE_LEVEL = 0.9
-        self.CREPE_STEP_SIZE = 30   #in milliseconds
+        #self.CREPE_STEP_SIZE = 30   #in milliseconds
+        self.CREPE_STEP_SIZE = int(self.TIME_TO_PROCESS * 1000)  #if the time to process is 0.1 then step size is 100 ms
+        #check if it should be hard coded ot dynamic
         self.songName = ""
 
     def freqToNote(self, freq):
@@ -169,6 +177,28 @@ class OutOfTune:
 
         # Print the note with the elapsed time and error percentage
         print(f"{elapsed_time}: {curr_note}")
+
+
+        # #Trying crepe
+        # raw_data_signal = np.frombuffer(in_data, dtype=np.int16)
+        # seconds, frequencies, confidence, _ = crepe.predict(raw_data_signal, self.rate_mic, step_size=20, model_capacity='tiny', verbose=0)
+        #
+        # reliable_indices = confidence >= 0.7
+        # #reliable_confidence = confidence[reliable_indices]
+        # #reliable_time = seconds[reliable_indices]
+        # reliable_frequency = frequencies[reliable_indices]
+        #
+        # freqs = [self.tunerNotes[self.frequencies[self.closest_value_index(self.frequencies, frequency)]] for frequency in reliable_frequency]
+        #
+        # count = Counter(freqs)
+        # most_common = count.most_common(1)  # Get the most common element and its count as a list of tuples
+        # if len(most_common) == 0:
+        #     most_commonNum = 0
+        # else:
+        #     most_commonNum = most_common[0][0]
+        #
+        # print(f"CREPE: {elapsed_time} : {freqs}, (most common-{most_commonNum})\n")
+
 
         return in_data, pyaudio.paContinue
 
@@ -299,12 +329,17 @@ class OutOfTune:
 
     def removeDuplicatesFromDict(self, seconds, freqs, crepeBool):
         result = dict()
-        if crepeBool:
-            time_for_each_chunk = 0.1  #the time of each chunk (in seconds)
-            chunk_size = int(time_for_each_chunk / (self.CREPE_STEP_SIZE * 0.001))
+        time_for_each_chunk = 0.1  # the time of each chunk (in seconds) (in this time we take the majority pitch)
+
+        # if we decided that the Time_to_process is large enough we don't need to do majority vote
+        if self.TIME_TO_PROCESS * 2 > time_for_each_chunk:
+            chunk_size = 1
         else:
-            time_for_each_chunk = 0.1
-            chunk_size = int(time_for_each_chunk / self.TIME_TO_PROCESS)
+            if crepeBool:
+                chunk_size = int(time_for_each_chunk / (self.CREPE_STEP_SIZE * 0.001))
+            else:
+                chunk_size = int(time_for_each_chunk / self.TIME_TO_PROCESS)
+
 
         #example : step_size = 20 (its in ms) and we want the chunk to hold data of 0.1 seconds,
         #so the size will be  0.1 / 0.001*20 = 5
@@ -357,11 +392,6 @@ class OutOfTune:
         songName = fileName.split('/')[-1].split('.')[0]
         sr, y = wavfile.read(fileName)
 
-        #save the data to file and image of the graph
-        #crepe.process_file(fileName, viterbi=True, model_capacity='full', step_size=10,
-        #                   save_plot=True, plot_voicing=True, save_activation=True)
-
-
         seconds, frequency, confidence, _ = self.runCrepePrediction(y, sr)
 
         # Filter out frequencies with confidence below 0.5
@@ -381,11 +411,11 @@ class OutOfTune:
 
         saveToFile(fileData)
 
-    @jit(target_backend='cuda')
+    #@jit(target_backend='cuda')
     def runCrepePrediction(self, y, sr):
         # Call crepe to estimate pitch and confidence
         # , viterbi=True, step_size=10
-        return crepe.predict(y, sr, model_capacity='full', step_size=self.CREPE_STEP_SIZE)
+        return crepe.predict(y, sr, model_capacity='large', step_size=self.CREPE_STEP_SIZE)
 
 
     def plotGraphWav(self, seconds, freq, confidence):
@@ -461,9 +491,9 @@ def listToString(freqList):
 
 
 def compareTest():
-    archivedSongData = getDataFromFile("mary")
+    archivedSongData = getDataFromFile("yesterday23")
 
-    micSongData = getDataFromFile("maryMic2XSpeed")
+    micSongData = getDataFromFile("YonaMic")
 
     compareDTW(micSongData, archivedSongData)
 
@@ -475,16 +505,12 @@ def compareTest():
 if __name__ == "__main__":
     oot = OutOfTune()
 
-    #oot.read_from_mic()
+    oot.read_from_mic()
 
     printGraph = True
 
-    #getSongData("ed sheeran perfect !.wav", printGraph)
-    #getSongData("mary.wav", printGraph)
+    #getSongData("yesterday23.wav", printGraph)
 
     compareTest()
 
-    # audio_path = './songsWav/mary.wav'
-    # audio_path = './recorded_mary.wav'
-    # testCrepe(audio_path)
 
