@@ -21,6 +21,8 @@ import wave
 import pyaudio
 import tkinter as tk
 
+from VirtualPiano import VirtualPiano
+
 from compare import compareDTW
 from crepeTest import testCrepe, crepePrediction
 from filesAccess import saveToFile, getDataFromFile, checkIfSongDataExists, getSongWavPath, FileData
@@ -47,20 +49,20 @@ class OutOfTune:
         self.FORMAT = pyaudio.paInt16
         self.soundGate = 19
         self.tunerNotes = {65.41: 'C2', 69.30: 'C#2', 73.42: 'D2', 77.78: 'D#2',
-                           82.41: 'E2', 87.31: 'F2', 92.50: 'F#2', 98.00: 'G2',
-                           103.80: 'G#2', 110.00: 'A2', 116.50: 'Bb2', 123.50: 'B2',
-                           130.80: 'C3', 138.60: 'C#3', 146.80: 'D3', 155.60: 'Db3',
-                           164.80: 'E3', 174.60: 'F3', 185.00: 'F#3', 196.00: 'G3',
-                           207.70: 'G#3', 220.00: 'A3', 233.10: 'Bb3', 246.90: 'B3',
-                           261.60: 'C4', 277.20: 'C#4', 293.70: 'D4', 311.10: 'Eb4',
-                           329.60: 'E4', 349.20: 'F4', 370.00: 'F#4', 392.00: 'G4',
-                           415.30: 'G#4', 440.00: 'A4', 466.20: 'Ab4', 493.90: 'B4',
-                           523.30: 'C5', 554.40: 'C#5', 587.30: 'D5', 622.30: 'Eb5',
-                           659.30: 'E5', 698.50: 'F5', 740.00: 'F#5', 784.00: 'G5',
-                           830.60: 'G#5', 880.00: 'A5', 932.30: 'Bb5', 987.80: 'B5',
-                           1047.00: 'C6', 1109.0: 'C#6', 1175.0: 'D6', 1245.0: 'Eb6',
-                           1319.0: 'E6', 1397.0: 'F6', 1480.0: 'F#6', 1568.0: 'G6',
-                           1661.0: 'G#6', 1760.0: 'A6', 1865.0: 'Bb6', 1976.0: 'B6',
+                                82.41: 'E2', 87.31: 'F2', 92.50: 'F#2', 98.00: 'G2',
+                                    103.80: 'G#2', 110.00: 'A2', 116.50: 'B#2', 123.50: 'B2',
+                           130.80: 'C3', 138.60: 'C#3', 146.80: 'D3', 155.60: 'D#3',
+                                164.80: 'E3', 174.60: 'F3', 185.00: 'F#3', 196.00: 'G3',
+                                    207.70: 'G#3', 220.00: 'A3', 233.10: 'B#3', 246.90: 'B3',
+                           261.60: 'C4', 277.20: 'C#4', 293.70: 'D4', 311.10: 'D#4',
+                                329.60: 'E4', 349.20: 'F4', 370.00: 'F#4', 392.00: 'G4',
+                                    415.30: 'G#4', 440.00: 'A4', 466.20: 'B#4', 493.90: 'B4',
+                           523.30: 'C5', 554.40: 'C#5', 587.30: 'D5', 622.30: 'D#5',
+                                659.30: 'E5', 698.50: 'F5', 740.00: 'F#5', 784.00: 'G5',
+                                    830.60: 'G#5', 880.00: 'A5', 932.30: 'B#5', 987.80: 'B5',
+                           1047.00: 'C6', 1109.0: 'C#6', 1175.0: 'D6', 1245.0: 'D#6',
+                                1319.0: 'E6', 1397.0: 'F6', 1480.0: 'F#6', 1568.0: 'G6',
+                                    1661.0: 'G#6', 1760.0: 'A6', 1865.0: 'B#6', 1976.0: 'B6',
                            2093.0: 'C7'}
         self.frequencies = np.array(sorted(self.tunerNotes.keys()))
         self.start_time = 0
@@ -83,6 +85,14 @@ class OutOfTune:
         self.CREPE_STEP_SIZE = int(self.TIME_TO_PROCESS * 1000)  #if the time to process is 0.1 then step size is 100 ms
         #check if it should be hard coded ot dynamic
         self.songName = ""
+
+        self.piano = self.createPiano(self.root)
+
+
+    def createPiano(self, root):
+        piano = VirtualPiano(root, width=1600, height=200)  # Adjust width here
+        piano.pack(fill=tk.BOTH, expand=True)
+        return piano
 
     def freqToNote(self, freq):
         if freq == 0:
@@ -199,6 +209,7 @@ class OutOfTune:
         #
         # print(f"CREPE: {elapsed_time} : {freqs}, (most common-{most_commonNum})\n")
 
+        self.piano.update_piano(curr_note)
 
         return in_data, pyaudio.paContinue
 
@@ -430,12 +441,12 @@ class OutOfTune:
         axs[0].set_title('Estimated Pitch')
         axs[0].legend()
 
-        # Plot the confidence over time
-        axs[1].plot(seconds, confidence, label='Confidence', color='green')
-        axs[1].set_xlabel('Time (s)')
-        axs[1].set_ylabel('Confidence')
-        axs[1].set_title('Confidence')
-        axs[1].legend()
+        # # Plot the confidence over time
+        # axs[1].plot(seconds, confidence, label='Confidence', color='green')
+        # axs[1].set_xlabel('Time (s)')
+        # axs[1].set_ylabel('Confidence')
+        # axs[1].set_title('Confidence')
+        # axs[1].legend()
 
         plt.tight_layout()
         plt.show()
@@ -446,7 +457,7 @@ class OutOfTune:
 
     def setTimerWindowButtons(self):
         self.root = tk.Tk()
-        self.root.geometry("200x100")  # Set window size
+        self.root.geometry("1600x300")  # Set window size
         self.label = tk.Label(self.root, text="", font=("Arial", 18))
         self.label.pack(expand=True)
         self.start_button = tk.Button(self.root, text="Start", command=self.start_timer)
@@ -511,6 +522,6 @@ if __name__ == "__main__":
 
     #getSongData("yesterday23.wav", printGraph)
 
-    compareTest()
+    #compareTest()
 
 
