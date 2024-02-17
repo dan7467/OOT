@@ -90,7 +90,7 @@ class OutOfTune:
 
 
     def createPiano(self, root):
-        piano = VirtualPiano(root, width=1600, height=200)  # Adjust width here
+        piano = VirtualPiano(root, width=1600, height=800)  # Adjust width here
         piano.pack(fill=tk.BOTH, expand=True)
         return piano
 
@@ -119,6 +119,11 @@ class OutOfTune:
         self.start_time = time.time()
         timer_thread = threading.Thread(target=self.display_timer)
         timer_thread.start()
+
+        # start the notes displayed from here!
+        notes_sequence = [('C4', 0.1), ('D4', 0.2), ('E4', 0.8), ('D4', 0.05), ('C4', 0.1), ('D4', 0.2), ('E4', 0.8),
+                          ('D4', 0.05)]
+        self.piano.display_notes_sequence(notes_sequence)
 
     def stop_timer(self):
         self.stream.stop_stream()
@@ -457,7 +462,7 @@ class OutOfTune:
 
     def setTimerWindowButtons(self):
         self.root = tk.Tk()
-        self.root.geometry("1600x300")  # Set window size
+        self.root.geometry("1600x900")  # Set window size
         self.label = tk.Label(self.root, text="", font=("Arial", 18))
         self.label.pack(expand=True)
         self.start_button = tk.Button(self.root, text="Start", command=self.start_timer)
