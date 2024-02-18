@@ -517,9 +517,9 @@ def listToString(freqList):
 
 
 def compareTest():
-    archivedSongData = getDataFromFile("Viva La Vida 15Mic")
+    archivedSongData = getDataFromFile("aMic")
 
-    micSongData = getDataFromFile("Viva La Vida 15MicMic")
+    micSongData = getDataFromFile("aMicMic")
 
     compareDTW(micSongData, archivedSongData)
 
