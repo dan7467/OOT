@@ -220,7 +220,6 @@ if __name__ == "__main__":
     # piano.display_note('C4', 1)
     # Example of notes sequence with two notes
 
-    # TODO transform the dict I have with times and notes to the kind of list at the bottom. if the number is 2
     # then it will be shown for 6 seconds (so if I want something to be shown to 1.2 seconds I need to write below 0.4
     notes_sequence = [('C3', 2), (None, 1), ('D3', 0.3), ('D#3', 0.1), ('E3', 0.8),
                       ('F3', 3), ('F#3', 0.05), (None, 0.3), ('G#3', 0.1), ('A3', 0.8)]
