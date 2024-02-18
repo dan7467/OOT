@@ -131,9 +131,9 @@ def lcssAndDTW(x, y, xTime, yTime):
     dtw_path, sim_dtw = metrics.dtw_path(x, y, sakoe_chiba_radius=1)
 
     # Plotting
-    plt.figure(figsize=(8, 8))
+    #plt.figure(figsize=(8, 8))
 
-    lcssPlot(x, y, xTime, yTime)
+    #lcssPlot(x, y, xTime, yTime)
 
     plt.figure(figsize=(8, 8))
     plt.plot(x, "r-", label='First time series')

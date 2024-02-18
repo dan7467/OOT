@@ -82,7 +82,7 @@ def getDataFromFile(songName):
             if len(splitKeyValue) > 1:
                 time = float(splitKeyValue[0])
                 freq = splitKeyValue[1]
-                freqDict[time] = freq
+                freqDict[time] = float(freq)
 
 
     fileData = FileData(songName, sampleCounter, recordingLenSeconds, duration_to_process, sampleRate, freqDict)

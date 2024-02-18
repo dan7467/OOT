@@ -85,7 +85,7 @@ class OutOfTune:
         self.CREPE_STEP_SIZE = int(self.TIME_TO_PROCESS * 1000)  #if the time to process is 0.1 then step size is 100 ms
         #check if it should be hard coded ot dynamic
         self.songName = ""
-
+        self.currFileData = None
         self.piano = self.createPiano(self.root)
 
 
@@ -120,10 +120,19 @@ class OutOfTune:
         timer_thread = threading.Thread(target=self.display_timer)
         timer_thread.start()
 
-        # start the notes displayed from here!
-        notes_sequence = [('C4', 0.1), ('D4', 0.2), ('E4', 0.8), ('D4', 0.05), ('C4', 0.1), ('D4', 0.2), ('E4', 0.8),
-                          ('D4', 0.05)]
-        self.piano.display_notes_sequence(notes_sequence)
+        if self.currFileData is not None:
+            # start the notes displayed from here!
+            freqDict = self.currFileData.notesDict
+            notesDict = self.transformFreqsDictToNotesDict(freqDict)
+            notes_sequence = self.piano.transormDictToTuples(notesDict)
+            self.piano.display_notes_sequence3(notes_sequence)
+
+
+    def transformFreqsDictToNotesDict(self, freqDict):
+        newDict = dict()
+        for currTime, freq in freqDict.items():
+            newDict[currTime] = self.freqToNote(freq)
+        return newDict
 
     def stop_timer(self):
         self.stream.stop_stream()
@@ -258,6 +267,7 @@ class OutOfTune:
         self.songName = "tempMic"
         if self.matchingToSongBool:
             print("Comparing to a song!")
+            self.currFileData = fileData
             # ensure the time between each note printed is the same as the archived version!
             self.rate_mic = int(fileData.sampleRate)
             self.buffer_size = int(self.rate_mic * fileData.durationToProcess)
@@ -507,9 +517,9 @@ def listToString(freqList):
 
 
 def compareTest():
-    archivedSongData = getDataFromFile("yesterday23")
+    archivedSongData = getDataFromFile("Viva La Vida 15Mic")
 
-    micSongData = getDataFromFile("YonaMic")
+    micSongData = getDataFromFile("Viva La Vida 15MicMic")
 
     compareDTW(micSongData, archivedSongData)
 
@@ -525,8 +535,8 @@ if __name__ == "__main__":
 
     printGraph = True
 
-    #getSongData("yesterday23.wav", printGraph)
+    #getSongData("Viva La Vida 15.wav", printGraph)
 
-    #compareTest()
+    compareTest()
 
 

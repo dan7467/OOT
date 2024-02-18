@@ -47,9 +47,8 @@ class VirtualPiano(tk.Canvas):
         self.current_note = self.create_line(x1 + key_width / 2, self.winfo_reqheight() / 2, x1 + key_width / 2,
                                              self.winfo_reqheight(), fill='red', width=key_width / 4)
 
-
-    #OLD VERSIONS
-    #ALL THE KEYS ARE MOVING DOWN BUT THEY ARE ONE BY ONE! NEED TO BE MORE THAN ONE IN SCREEN
+    # OLD VERSIONS
+    # ALL THE KEYS ARE MOVING DOWN BUT THEY ARE ONE BY ONE! NEED TO BE MORE THAN ONE IN SCREEN
     # def display_notes_sequence(self, notes_sequence):
     #     piano_width = self.winfo_reqwidth()
     #     key_width = piano_width / len(self.notes)
@@ -74,8 +73,6 @@ class VirtualPiano(tk.Canvas):
     #
     #         # Delete the rectangle after reaching the key
     #         self.delete(rectangle)
-
-
 
     # ALL NOTES ARE SHOWN AT THE START OF THE PROGRAM, NEED TO DO IT ONE BY ONE
     # def display_notes_sequence(self, notes_sequence):
@@ -116,7 +113,6 @@ class VirtualPiano(tk.Canvas):
     #     for rectangle in rectangles:
     #         self.delete(rectangle)
 
-
     # # NOTE coming down with good length effect!!
     # def display_note(self, note, duration):
     #     piano_width = self.winfo_reqwidth()
@@ -143,8 +139,7 @@ class VirtualPiano(tk.Canvas):
     #     # Delete the rectangle when its top aligns with the top of the piano keys
     #     self.delete(rectangle)
 
-
-    #WORKING ALMOST PERFECT!! THEY ARE APPEARING ONE AFTER ANOTHER BUT WITH A SLIGHT OVERLAP
+    # WORKING ALMOST PERFECT!! THEY ARE APPEARING ONE AFTER ANOTHER BUT WITH A SLIGHT OVERLAP
 
     def display_notes_sequence3(self, notes_sequence):
         # Calculate dimensions
@@ -158,15 +153,13 @@ class VirtualPiano(tk.Canvas):
             self.after(delay, self.display_note1, note, duration, piano_width, key_width, piano_height)
             delay += int(duration * 3000)  # Convert duration to milliseconds
 
-
     def display_note1(self, note, duration, piano_width, key_width, piano_height):
         key_index = self.notes.index(note) if note else 0  # Set key_index to 0 if note is None
         x1 = key_index * key_width
         x2 = (key_index + 1) * key_width
 
-        total_duration = max(duration, 0.1)  # Minimum duration to prevent division by zero
+        total_duration = max(duration, 0.01)  # Minimum duration to prevent division by zero
         note_height = total_duration * piano_height / 2
-
 
         fill_color = 'white' if note is None else 'blue'  # Use white color if note is None
         outline_color = 'white' if note is None else 'blue'  # Use white color if note is None
@@ -181,6 +174,20 @@ class VirtualPiano(tk.Canvas):
             self.after(10, lambda: self.move_rect(rectangle, distance))
         else:
             self.delete(rectangle)
+
+    # receives notes of seconds to notes and returns notes and duration (in seconds)
+    def transormDictToTuples(self, notesDict):
+        result = list()
+
+        prevNoteTime = 0
+        for currNoteTime, note in notesDict.items():
+            if note == '0':
+                note = None
+            duration = (currNoteTime - prevNoteTime) / 3
+            result.append((note, duration))
+            prevNoteTime = currNoteTime
+
+        return result
 
 
 def testPiano(root):
@@ -206,18 +213,17 @@ if __name__ == "__main__":
     piano = testPiano(root)
     # displayNotes(root, piano)
 
-    # notes_sequence = [('C4', 0.1), ('D4', 0.2), ('E4', 0.8), ('D4', 0.05), ('C4', 0.1), ('D4', 0.2), ('E4', 0.8), ('D4', 0.05)]
+    # notes_sequence = [('C4', 0.1), ('D4', 0.2), ('E4', 0.8), ('D4', 0.05)
+    # , ('C4', 0.1), ('D4', 0.2), ('E4', 0.8), ('D4', 0.05)]
     # piano.display_notes_sequence(notes_sequence)
 
-    #piano.display_note('C4', 1)
+    # piano.display_note('C4', 1)
     # Example of notes sequence with two notes
 
-
-    #TODO transform the dict I have with times and notes to the kind of list at the bottom. if the number is 2
+    # TODO transform the dict I have with times and notes to the kind of list at the bottom. if the number is 2
     # then it will be shown for 6 seconds (so if I want something to be shown to 1.2 seconds I need to write below 0.4
     notes_sequence = [('C3', 2), (None, 1), ('D3', 0.3), ('D#3', 0.1), ('E3', 0.8),
                       ('F3', 3), ('F#3', 0.05), (None, 0.3), ('G#3', 0.1), ('A3', 0.8)]
     piano.display_notes_sequence3(notes_sequence)
-
 
     root.mainloop()
