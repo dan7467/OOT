@@ -4,7 +4,6 @@ import numpy as np
 from fastdtw import fastdtw
 from matplotlib import pyplot as plt
 from dtaidistance import dtw_visualisation as dtwvis, dtw
-from dtwParallel import dtw_functions
 from dtwalign import dtw as dtwAlignFunc
 
 from filesAccess import getDataFromFile, FileData
