@@ -5,11 +5,11 @@ PATH = './songsData/'
 DELIMITER = ' ; '
 DICT_DELIMITER = '-'
 WAV_PATH = './songsWav/'
-SAMPLE_COUNTER_INDEX = 0
-RECORDING_LEN_SECONDS_INDEX = 1
-DURATION_TO_PROCESS_INDEX = 2
-SAMPLE_RATE_INDEX = 3
-REST_INDEX = 4
+# SAMPLE_COUNTER_INDEX = 0
+# RECORDING_LEN_SECONDS_INDEX = 1
+# DURATION_TO_PROCESS_INDEX = 2
+# SAMPLE_RATE_INDEX = 3
+REST_INDEX = 0
 
 class FileData:
     def __init__(self, songName, sampleCounter, recordingLenSeconds, durationToProcess, sampleRate, dict1):
@@ -47,10 +47,10 @@ def saveToFile(fileData: FileData):
         return
 
     with open(path, 'w') as f:
-        f.write(str(fileData.sampleCounter) + DELIMITER)
-        f.write(str(fileData.recordingLenSecond) + DELIMITER)
-        f.write(str(fileData.durationToProcess) + DELIMITER)
-        f.write(str(fileData.sampleRate) + DELIMITER)
+        # f.write(str(fileData.sampleCounter) + DELIMITER)
+        # f.write(str(fileData.recordingLenSecond) + DELIMITER)
+        # f.write(str(fileData.durationToProcess) + DELIMITER)
+        # f.write(str(fileData.sampleRate) + DELIMITER)
 
         for currSecond, currFreq in zip(fileData.getSecondsList(), fileData.getFrequencies()):
             f.write(str(currSecond) + DICT_DELIMITER)
@@ -71,10 +71,14 @@ def getDataFromFile(songName):
     with open(path, 'r') as f:
         lines = f.readlines()
         splitData = lines[0].split(DELIMITER)
-        sampleCounter = splitData[SAMPLE_COUNTER_INDEX]
-        recordingLenSeconds = float(splitData[RECORDING_LEN_SECONDS_INDEX])
-        duration_to_process = float(splitData[DURATION_TO_PROCESS_INDEX])
-        sampleRate = int(splitData[SAMPLE_RATE_INDEX])
+        # sampleCounter = splitData[SAMPLE_COUNTER_INDEX]
+        # recordingLenSeconds = float(splitData[RECORDING_LEN_SECONDS_INDEX])
+        # duration_to_process = float(splitData[DURATION_TO_PROCESS_INDEX])
+        # sampleRate = int(splitData[SAMPLE_RATE_INDEX])
+        sampleCounter = 0
+        recordingLenSeconds = 0
+        duration_to_process = 0
+        sampleRate = 16000
         splitData = splitData[REST_INDEX:]
 
         for curr in splitData:

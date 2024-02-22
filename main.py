@@ -24,9 +24,8 @@ import tkinter as tk
 from VirtualPiano import VirtualPiano
 
 from compare import compareDTW
-from crepeTest import testCrepe, crepePrediction
 from filesAccess import saveToFile, getDataFromFile, checkIfSongDataExists, getSongWavPath, FileData
-from numba import jit, cuda
+
 
 class OutOfTune:
     def __init__(self):
@@ -170,7 +169,6 @@ class OutOfTune:
 
         self.recorded_frames_crepe.append(in_data)  # for crepe
 
-        # raw_data_signal = np.fromstring( in_data,dtype= np.int16 )
         raw_data_signal = np.frombuffer(in_data, dtype=np.int16)
 
         if not self.start_flag:  # if the timer hadn't been started
@@ -189,8 +187,6 @@ class OutOfTune:
             return raw_data_signal, pyaudio.paContinue
         if signal_level > self.soundGate:
             return raw_data_signal, pyaudio.paContinue
-
-        # inputnote = inputnote / 2    #TEMP REMOVE THIS!!!!!
 
         targetNote = self.closest_value_index(self.frequencies, round(inputnote, 2))
 
@@ -227,36 +223,6 @@ class OutOfTune:
 
         return in_data, pyaudio.paContinue
 
-    # callback with timestamp (wav)
-    def callback_wav(self, in_data, frame_count, time_info, status_flags, sampleRate):
-        # raw_data_signal = np.fromstring( in_data,dtype= np.int16 )
-        raw_data_signal = np.frombuffer(in_data, dtype=np.int16)
-        signal_level = round(abs(self.loudness(raw_data_signal)), 2)  #### find the volume from the audio
-
-        self.sampleCounter += 1
-        # Some samples may fail. so we need to count the samples from here and only save in the dict the valid samples
-
-        try:
-            # inputnote = round(self.freq_from_autocorr(raw_data_signal, self.RATE), 2) # find the freq from the audio
-            frameRate = sampleRate  # frameRate changes can lead to different notes
-            inputnote = round(self.freq_from_autocorr(raw_data_signal, frameRate), 2)  # find the freq from the audio
-        except:
-            inputnote = 0
-        if inputnote > self.frequencies[len(self.tunerNotes) - 1]:
-            return raw_data_signal, pyaudio.paContinue
-        if inputnote < self.frequencies[0]:
-            return raw_data_signal, pyaudio.paContinue
-        if signal_level > self.soundGate:
-            return raw_data_signal, pyaudio.paContinue
-
-        targetnote = self.closest_value_index(self.frequencies, round(inputnote, 2))
-
-        # Save the note sample with the index of the sample. After all the samples are taken, we will calculate the time
-        # of the sample according to the index.
-        self.detectedWavNotesDict[self.sampleCounter] = self.frequencies[targetnote]
-
-        return in_data, pyaudio.paContinue
-
     def open_timer_thread(self):
         self.root.mainloop()  # for the timerWindow and main window
 
@@ -269,8 +235,8 @@ class OutOfTune:
             print("Comparing to a song!")
             self.currFileData = fileData
             # ensure the time between each note printed is the same as the archived version!
-            self.rate_mic = int(fileData.sampleRate)
-            self.buffer_size = int(self.rate_mic * fileData.durationToProcess)
+            #self.rate_mic = int(fileData.sampleRate)
+            #self.buffer_size = int(self.rate_mic * fileData.durationToProcess)
             self.songName = fileData.songName + 'Mic'
         elif type(fileData) is str:
             self.songName = fileData + 'Mic'
@@ -318,14 +284,6 @@ class OutOfTune:
 
         return (xv, yv)
 
-    # def loudness(chunk):
-    #     data = np.array(chunk, dtype=float) / 32768.0
-    #     ms = math.sqrt(np.sum(data ** 2.0) / len(data))
-    #     if ms < 10e-8: ms = 10e-8
-    #
-    #     return 10.0 * math.log(ms, 10.0)
-
-    # ChatGPT Added!!
     def loudness(self, chunk):
         data = np.array(chunk, dtype=float) / 32768.0
         denominator = len(data)
@@ -373,20 +331,25 @@ class OutOfTune:
         lastFreq = 0
         freqsLen = len(freqs)
         for i in range(0, freqsLen, chunk_size):
-            endIndex = min(i+chunk_size, freqsLen - 1)      #so it will not overflow
 
-            chunkFreqs = freqs[i:endIndex]
-            chunkFreqs = [self.frequencies[self.closest_value_index(self.frequencies, curr)] for curr in chunkFreqs]
+            currFreq = self.frequencies[self.closest_value_index(self.frequencies, freqs[i])]
+            currSecond = seconds[i]
 
-            # Count occurrences of each element in the list
-            element_counts = Counter(chunkFreqs)
+            if chunk_size > 1:
+                endIndex = min(i+chunk_size, freqsLen - 1)      #so it will not overflow
 
-            # Get the element with the maximum occurrence
-            mostCommon = element_counts.most_common(1)
-            if len(mostCommon) == 0:
-                continue
-            currFreq = mostCommon[0][0]
-            currSecond = (seconds[i] + seconds[endIndex]) / 2
+                chunkFreqs = freqs[i:endIndex]
+                chunkFreqs = [self.frequencies[self.closest_value_index(self.frequencies, curr)] for curr in chunkFreqs]
+
+                # Count occurrences of each element in the list
+                element_counts = Counter(chunkFreqs)
+
+                # Get the element with the maximum occurrence
+                mostCommon = element_counts.most_common(1)
+                if len(mostCommon) == 0:
+                    continue
+                currFreq = mostCommon[0][0]
+                currSecond = (seconds[i] + seconds[endIndex]) / 2
 
             currSecond = round(currSecond, 3)
             if currSecond - lastSecond > self.MIN_TIME_FOR_BREAK:  # silence in original song
@@ -405,11 +368,11 @@ class OutOfTune:
             currNote = self.freqToNote(freq)
             print(f"{second}: {currNote}")
 
-        plt.plot(result.keys(), result.values())
-        plt.title("After chunk filtering")
-        plt.legend()
-        plt.show()
-        plt.savefig("FilteredGraph")
+        # plt.plot(result.keys(), result.values())
+        # plt.title("After chunk filtering")
+        # plt.legend()
+        # plt.show()
+        # plt.savefig("FilteredGraph")
 
         return result
 
@@ -437,7 +400,6 @@ class OutOfTune:
 
         saveToFile(fileData)
 
-    #@jit(target_backend='cuda')
     def runCrepePrediction(self, y, sr):
         # Call crepe to estimate pitch and confidence
         # , viterbi=True, step_size=10
@@ -446,15 +408,26 @@ class OutOfTune:
 
     def plotGraphWav(self, seconds, freq, confidence):
 
-        # Create two separate plots for estimated pitch and confidence
-        fig, axs = plt.subplots(2, 1, figsize=(10, 8))
+        #Graph without confidence
+        plt.plot(seconds, freq, label='Estimated pitch (Hz)', color='blue')
+        plt.xlabel('Tims (s)')
+        plt.ylabel('Frequency (Hz)')
+        plt.title('Estimated Pitch')
+        plt.legend()
 
-        # Plot the estimated pitch over time
-        axs[0].plot(seconds, freq, label='Estimated pitch (Hz)', color='blue')
-        axs[0].set_xlabel('Time (s)')
-        axs[0].set_ylabel('Frequency (Hz)')
-        axs[0].set_title('Estimated Pitch')
-        axs[0].legend()
+        plt.tight_layout()
+        plt.show()
+        plt.savefig('wavGraph.png')
+
+        # two separate plots for estimated pitch and confidence
+        # fig, axs = plt.subplots(2, 1, figsize=(10, 8))
+        #
+        # # Plot the estimated pitch over time
+        # axs[0].plot(seconds, freq, label='Estimated pitch (Hz)', color='blue')
+        # axs[0].set_xlabel('Time (s)')
+        # axs[0].set_ylabel('Frequency (Hz)')
+        # axs[0].set_title('Estimated Pitch')
+        # axs[0].legend()
 
         # # Plot the confidence over time
         # axs[1].plot(seconds, confidence, label='Confidence', color='green')
@@ -463,10 +436,13 @@ class OutOfTune:
         # axs[1].set_title('Confidence')
         # axs[1].legend()
 
-        plt.tight_layout()
-        plt.show()
 
-        fig.savefig('wavGraph.png')
+        # Plot the estimated pitch over time
+        #
+        # plt.tight_layout()
+        # plt.show()
+
+        #fig.savefig('wavGraph.png')
 
         return
 
@@ -535,8 +511,8 @@ if __name__ == "__main__":
 
     printGraph = True
 
-    #getSongData("Viva La Vida 15.wav", printGraph)
+    #getSongData("mary.wav", printGraph)
 
-    compareTest()
+    #compareTest()
 
 
