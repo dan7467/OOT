@@ -30,6 +30,7 @@ from numba import jit, cuda
 
 class OutOfTune:
     def __init__(self):
+        #
         self.sampleCounter = 0
         self.detectedWavNotesDict = dict()  # key = sample number , value = freq
         self.dictFromMic = dict()
