@@ -12,6 +12,7 @@ from collections import Counter
 import crepe
 import numpy as np
 from matplotlib import pyplot as plt
+from moviepy.audio.io.AudioFileClip import AudioFileClip
 from scipy.io import wavfile
 from scipy.signal import fftconvolve
 from numpy import argmax, diff
@@ -23,13 +24,15 @@ import tkinter as tk
 from VirtualPiano import VirtualPiano
 
 from compare import compareDTW
+from crepeTest import testCrepe, crepePrediction
 from filesAccess import saveToFile, getDataFromFile, checkIfSongDataExists, getSongWavPath, FileData
-
+from numba import jit, cuda
 
 class OutOfTune:
     def __init__(self):
-        #self.sampleCounter = 0
-        #self.detectedWavNotesDict = dict()  # key = sample number , value = freq
+        #
+        self.sampleCounter = 0
+        self.detectedWavNotesDict = dict()  # key = sample number , value = freq
         self.dictFromMic = dict()
 
         self.rate_mic = 16000
@@ -168,6 +171,7 @@ class OutOfTune:
 
         self.recorded_frames_crepe.append(in_data)  # for crepe
 
+        # raw_data_signal = np.fromstring( in_data,dtype= np.int16 )
         raw_data_signal = np.frombuffer(in_data, dtype=np.int16)
 
         if not self.start_flag:  # if the timer hadn't been started
@@ -186,6 +190,8 @@ class OutOfTune:
             return raw_data_signal, pyaudio.paContinue
         if signal_level > self.soundGate:
             return raw_data_signal, pyaudio.paContinue
+
+        # inputnote = inputnote / 2    #TEMP REMOVE THIS!!!!!
 
         targetNote = self.closest_value_index(self.frequencies, round(inputnote, 2))
 
@@ -222,6 +228,36 @@ class OutOfTune:
 
         return in_data, pyaudio.paContinue
 
+    # callback with timestamp (wav)
+    def callback_wav(self, in_data, frame_count, time_info, status_flags, sampleRate):
+        # raw_data_signal = np.fromstring( in_data,dtype= np.int16 )
+        raw_data_signal = np.frombuffer(in_data, dtype=np.int16)
+        signal_level = round(abs(self.loudness(raw_data_signal)), 2)  #### find the volume from the audio
+
+        self.sampleCounter += 1
+        # Some samples may fail. so we need to count the samples from here and only save in the dict the valid samples
+
+        try:
+            # inputnote = round(self.freq_from_autocorr(raw_data_signal, self.RATE), 2) # find the freq from the audio
+            frameRate = sampleRate  # frameRate changes can lead to different notes
+            inputnote = round(self.freq_from_autocorr(raw_data_signal, frameRate), 2)  # find the freq from the audio
+        except:
+            inputnote = 0
+        if inputnote > self.frequencies[len(self.tunerNotes) - 1]:
+            return raw_data_signal, pyaudio.paContinue
+        if inputnote < self.frequencies[0]:
+            return raw_data_signal, pyaudio.paContinue
+        if signal_level > self.soundGate:
+            return raw_data_signal, pyaudio.paContinue
+
+        targetnote = self.closest_value_index(self.frequencies, round(inputnote, 2))
+
+        # Save the note sample with the index of the sample. After all the samples are taken, we will calculate the time
+        # of the sample according to the index.
+        self.detectedWavNotesDict[self.sampleCounter] = self.frequencies[targetnote]
+
+        return in_data, pyaudio.paContinue
+
     def open_timer_thread(self):
         self.root.mainloop()  # for the timerWindow and main window
 
@@ -234,8 +270,8 @@ class OutOfTune:
             print("Comparing to a song!")
             self.currFileData = fileData
             # ensure the time between each note printed is the same as the archived version!
-            #self.rate_mic = int(fileData.sampleRate)
-            #self.buffer_size = int(self.rate_mic * fileData.durationToProcess)
+            self.rate_mic = int(fileData.sampleRate)
+            self.buffer_size = int(self.rate_mic * fileData.durationToProcess)
             self.songName = fileData.songName + 'Mic'
         elif type(fileData) is str:
             self.songName = fileData + 'Mic'
@@ -287,6 +323,14 @@ class OutOfTune:
 
         return (xv, yv)
 
+    # def loudness(chunk):
+    #     data = np.array(chunk, dtype=float) / 32768.0
+    #     ms = math.sqrt(np.sum(data ** 2.0) / len(data))
+    #     if ms < 10e-8: ms = 10e-8
+    #
+    #     return 10.0 * math.log(ms, 10.0)
+
+    # ChatGPT Added!!
     def loudness(self, chunk):
         data = np.array(chunk, dtype=float) / 32768.0
         denominator = len(data)
@@ -314,71 +358,6 @@ class OutOfTune:
 
         return indexArray[0][0]
 
-    # def removeDuplicatesFromDict(self, seconds, freqs, crepeBool):
-    #     result = dict()
-    #     time_for_each_chunk = 0.1  # the time of each chunk (in seconds) (in this time we take the majority pitch)
-    #
-    #     # if we decided that the Time_to_process is large enough we don't need to do majority vote
-    #     if self.TIME_TO_PROCESS * 2 > time_for_each_chunk:
-    #         chunk_size = 1
-    #     else:
-    #         if crepeBool:
-    #             chunk_size = int(time_for_each_chunk / (self.CREPE_STEP_SIZE * 0.001))
-    #         else:
-    #             chunk_size = int(time_for_each_chunk / self.TIME_TO_PROCESS)
-    #
-    #
-    #     #example : step_size = 20 (its in ms) and we want the chunk to hold data of 0.1 seconds,
-    #     #so the size will be  0.1 / 0.001*20 = 5
-    #     lastSecond = 0
-    #     lastFreq = 0
-    #     freqsLen = len(freqs)
-    #     for i in range(0, freqsLen, chunk_size):
-    #
-    #         currFreq = self.frequencies[self.closest_value_index(self.frequencies, freqs[i])]
-    #         currSecond = seconds[i]
-    #
-    #         if chunk_size > 1:
-    #             endIndex = min(i+chunk_size, freqsLen - 1)      #so it will not overflow
-    #
-    #             chunkFreqs = freqs[i:endIndex]
-    #             chunkFreqs = [self.frequencies[self.closest_value_index(self.frequencies, curr)] for curr in chunkFreqs]
-    #
-    #             # Count occurrences of each element in the list
-    #             element_counts = Counter(chunkFreqs)
-    #
-    #             # Get the element with the maximum occurrence
-    #             mostCommon = element_counts.most_common(1)
-    #             if len(mostCommon) == 0:
-    #                 continue
-    #             currFreq = mostCommon[0][0]
-    #             currSecond = (seconds[i] + seconds[endIndex]) / 2
-    #
-    #         currSecond = round(currSecond, 3)
-    #         if currSecond - lastSecond > self.MIN_TIME_FOR_BREAK:  # silence in original song
-    #             result[lastSecond + self.MIN_TIME_FOR_BREAK / 2] = 0
-    #             result[currSecond] = currFreq
-    #             lastFreq = currFreq
-    #         elif currFreq != lastFreq:  # the note had changed
-    #             result[currSecond] = currFreq
-    #             lastFreq = currFreq
-    #         # if currFreq = lastFreq we don't need to save it, because before is the same
-    #         lastSecond = currSecond
-    #
-    #     # print the result for debug
-    #     print("Notes after filtering:\n")
-    #     for second, freq in result.items():
-    #         currNote = self.freqToNote(freq)
-    #         print(f"{second}: {currNote}")
-    #
-    #     # plt.plot(result.keys(), result.values())
-    #     # plt.title("After chunk filtering")
-    #     # plt.legend()
-    #     # plt.show()
-    #     # plt.savefig("FilteredGraph")
-    #
-    #     return result
-
     def removeDuplicatesFromDict(self, seconds, freqs, crepeBool):
         result = dict()
         time_for_each_chunk = 0.1  # the time of each chunk (in seconds) (in this time we take the majority pitch)
@@ -392,13 +371,14 @@ class OutOfTune:
             else:
                 chunk_size = int(time_for_each_chunk / self.TIME_TO_PROCESS)
 
-        # example : step_size = 20 (its in ms) and we want the chunk to hold data of 0.1 seconds,
-        # so the size will be  0.1 / 0.001*20 = 5
+
+        #example : step_size = 20 (its in ms) and we want the chunk to hold data of 0.1 seconds,
+        #so the size will be  0.1 / 0.001*20 = 5
         lastSecond = 0
         lastFreq = 0
         freqsLen = len(freqs)
         for i in range(0, freqsLen, chunk_size):
-            endIndex = min(i + chunk_size, freqsLen - 1)  # so it will not overflow
+            endIndex = min(i+chunk_size, freqsLen - 1)      #so it will not overflow
 
             chunkFreqs = freqs[i:endIndex]
             chunkFreqs = [self.frequencies[self.closest_value_index(self.frequencies, curr)] for curr in chunkFreqs]
@@ -438,7 +418,6 @@ class OutOfTune:
 
         return result
 
-
     def read_from_wav(self, fileName, printGraph):
 
         songName = fileName.split('/')[-1].split('.')[0]
@@ -458,15 +437,12 @@ class OutOfTune:
         print("\n\nCrepe version notes")
         dict_filtered = self.removeDuplicatesFromDict(reliable_time, reliable_frequency, True)
 
-        # fileData = FileData(songName, self.sampleCounter, 0, round(self.TIME_TO_PROCESS, 4),
-        #                     self.rate_mic, dict_filtered)
-
-        fileData = FileData(songName, 0, 0, 0, 0, dict_filtered)
+        fileData = FileData(songName, self.sampleCounter, 0, round(self.TIME_TO_PROCESS, 4),
+                            self.rate_mic, dict_filtered)
 
         saveToFile(fileData)
 
-
-
+    #@jit(target_backend='cuda')
     def runCrepePrediction(self, y, sr):
         # Call crepe to estimate pitch and confidence
         # , viterbi=True, step_size=10
@@ -538,8 +514,6 @@ class OutOfTune:
         pass
 
 
-
-
 def getSongData(file, printBool):
     songName = file.split('.')[0]
 
@@ -562,7 +536,6 @@ def listToString(freqList):
 
 
 def compareTest(archivedName, micName):
-
     archivedSongData = getDataFromFile(archivedName)
 
     micSongData = getDataFromFile(micName)
@@ -585,8 +558,12 @@ if __name__ == "__main__":
 
     printGraph = True
 
-    #getSongData("yesterday23.wav", printGraph)
+    #getSongData("The Scientist 25.wav", printGraph)
 
-    #compareTest("aMic", "aMicMic")
+
+    #compareTest()
+    #compareTest("yesterday23", "yesterday23Mic")
+
+    #updated version
 
 
