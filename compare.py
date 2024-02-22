@@ -146,6 +146,7 @@ def lcssAndDTW(x, y, xTime, yTime):
     plt.legend()
     plt.title("Matching with DTW, Aligned Graphs")
     plt.show()
+    plt.savefig("Aligned Graphs.png")
 
 
 def lcssPlot(x, y, xTime, yTime):

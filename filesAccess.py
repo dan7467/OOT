@@ -43,8 +43,8 @@ def checkIfSongDataExists(songName):
 #Example : 500 ; 63.555 ; 05:345 - 543.2 , 05:666 - 622.2 ....
 def saveToFile(fileData: FileData):
     path = PATH + fileData.songName + '.txt'
-    if checkIfFileExists(path):
-        return
+    # if checkIfFileExists(path):
+    #     return
 
     with open(path, 'w') as f:
         # f.write(str(fileData.sampleCounter) + DELIMITER)

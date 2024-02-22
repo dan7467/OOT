@@ -12,7 +12,6 @@ from collections import Counter
 import crepe
 import numpy as np
 from matplotlib import pyplot as plt
-from moviepy.audio.io.AudioFileClip import AudioFileClip
 from scipy.io import wavfile
 from scipy.signal import fftconvolve
 from numpy import argmax, diff
@@ -29,8 +28,8 @@ from filesAccess import saveToFile, getDataFromFile, checkIfSongDataExists, getS
 
 class OutOfTune:
     def __init__(self):
-        self.sampleCounter = 0
-        self.detectedWavNotesDict = dict()  # key = sample number , value = freq
+        #self.sampleCounter = 0
+        #self.detectedWavNotesDict = dict()  # key = sample number , value = freq
         self.dictFromMic = dict()
 
         self.rate_mic = 16000
@@ -257,6 +256,10 @@ class OutOfTune:
 
         self.read_from_wav(record_path, True)
 
+        archivedSongName = self.songName[:-3]
+        micSongName = self.songName
+        compareTest(archivedSongName, micSongName)
+
     def save_in_wav(self, frames):
         file_path = getSongWavPath(self.songName) + '.wav'
 
@@ -395,10 +398,14 @@ class OutOfTune:
         print("\n\nCrepe version notes")
         dict_filtered = self.removeDuplicatesFromDict(reliable_time, reliable_frequency, True)
 
-        fileData = FileData(songName, self.sampleCounter, 0, round(self.TIME_TO_PROCESS, 4),
-                            self.rate_mic, dict_filtered)
+        # fileData = FileData(songName, self.sampleCounter, 0, round(self.TIME_TO_PROCESS, 4),
+        #                     self.rate_mic, dict_filtered)
+
+        fileData = FileData(songName, 0, 0, 0, 0, dict_filtered)
 
         saveToFile(fileData)
+
+
 
     def runCrepePrediction(self, y, sr):
         # Call crepe to estimate pitch and confidence
@@ -471,6 +478,8 @@ class OutOfTune:
         pass
 
 
+
+
 def getSongData(file, printBool):
     songName = file.split('.')[0]
 
@@ -492,10 +501,11 @@ def listToString(freqList):
     return result
 
 
-def compareTest():
-    archivedSongData = getDataFromFile("aMic")
+def compareTest(archivedName, micName):
 
-    micSongData = getDataFromFile("aMicMic")
+    archivedSongData = getDataFromFile(archivedName)
+
+    micSongData = getDataFromFile(micName)
 
     compareDTW(micSongData, archivedSongData)
 
@@ -507,12 +517,12 @@ def compareTest():
 if __name__ == "__main__":
     oot = OutOfTune()
 
-    #oot.read_from_mic()
+    oot.read_from_mic()
 
     printGraph = True
 
     #getSongData("mary.wav", printGraph)
 
-    compareTest()
+    #compareTest("aMic", "aMicMic")
 
 
