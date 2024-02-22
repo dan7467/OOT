@@ -314,6 +314,71 @@ class OutOfTune:
 
         return indexArray[0][0]
 
+    # def removeDuplicatesFromDict(self, seconds, freqs, crepeBool):
+    #     result = dict()
+    #     time_for_each_chunk = 0.1  # the time of each chunk (in seconds) (in this time we take the majority pitch)
+    #
+    #     # if we decided that the Time_to_process is large enough we don't need to do majority vote
+    #     if self.TIME_TO_PROCESS * 2 > time_for_each_chunk:
+    #         chunk_size = 1
+    #     else:
+    #         if crepeBool:
+    #             chunk_size = int(time_for_each_chunk / (self.CREPE_STEP_SIZE * 0.001))
+    #         else:
+    #             chunk_size = int(time_for_each_chunk / self.TIME_TO_PROCESS)
+    #
+    #
+    #     #example : step_size = 20 (its in ms) and we want the chunk to hold data of 0.1 seconds,
+    #     #so the size will be  0.1 / 0.001*20 = 5
+    #     lastSecond = 0
+    #     lastFreq = 0
+    #     freqsLen = len(freqs)
+    #     for i in range(0, freqsLen, chunk_size):
+    #
+    #         currFreq = self.frequencies[self.closest_value_index(self.frequencies, freqs[i])]
+    #         currSecond = seconds[i]
+    #
+    #         if chunk_size > 1:
+    #             endIndex = min(i+chunk_size, freqsLen - 1)      #so it will not overflow
+    #
+    #             chunkFreqs = freqs[i:endIndex]
+    #             chunkFreqs = [self.frequencies[self.closest_value_index(self.frequencies, curr)] for curr in chunkFreqs]
+    #
+    #             # Count occurrences of each element in the list
+    #             element_counts = Counter(chunkFreqs)
+    #
+    #             # Get the element with the maximum occurrence
+    #             mostCommon = element_counts.most_common(1)
+    #             if len(mostCommon) == 0:
+    #                 continue
+    #             currFreq = mostCommon[0][0]
+    #             currSecond = (seconds[i] + seconds[endIndex]) / 2
+    #
+    #         currSecond = round(currSecond, 3)
+    #         if currSecond - lastSecond > self.MIN_TIME_FOR_BREAK:  # silence in original song
+    #             result[lastSecond + self.MIN_TIME_FOR_BREAK / 2] = 0
+    #             result[currSecond] = currFreq
+    #             lastFreq = currFreq
+    #         elif currFreq != lastFreq:  # the note had changed
+    #             result[currSecond] = currFreq
+    #             lastFreq = currFreq
+    #         # if currFreq = lastFreq we don't need to save it, because before is the same
+    #         lastSecond = currSecond
+    #
+    #     # print the result for debug
+    #     print("Notes after filtering:\n")
+    #     for second, freq in result.items():
+    #         currNote = self.freqToNote(freq)
+    #         print(f"{second}: {currNote}")
+    #
+    #     # plt.plot(result.keys(), result.values())
+    #     # plt.title("After chunk filtering")
+    #     # plt.legend()
+    #     # plt.show()
+    #     # plt.savefig("FilteredGraph")
+    #
+    #     return result
+
     def removeDuplicatesFromDict(self, seconds, freqs, crepeBool):
         result = dict()
         time_for_each_chunk = 0.1  # the time of each chunk (in seconds) (in this time we take the majority pitch)
@@ -327,32 +392,26 @@ class OutOfTune:
             else:
                 chunk_size = int(time_for_each_chunk / self.TIME_TO_PROCESS)
 
-
-        #example : step_size = 20 (its in ms) and we want the chunk to hold data of 0.1 seconds,
-        #so the size will be  0.1 / 0.001*20 = 5
+        # example : step_size = 20 (its in ms) and we want the chunk to hold data of 0.1 seconds,
+        # so the size will be  0.1 / 0.001*20 = 5
         lastSecond = 0
         lastFreq = 0
         freqsLen = len(freqs)
         for i in range(0, freqsLen, chunk_size):
+            endIndex = min(i + chunk_size, freqsLen - 1)  # so it will not overflow
 
-            currFreq = self.frequencies[self.closest_value_index(self.frequencies, freqs[i])]
-            currSecond = seconds[i]
+            chunkFreqs = freqs[i:endIndex]
+            chunkFreqs = [self.frequencies[self.closest_value_index(self.frequencies, curr)] for curr in chunkFreqs]
 
-            if chunk_size > 1:
-                endIndex = min(i+chunk_size, freqsLen - 1)      #so it will not overflow
+            # Count occurrences of each element in the list
+            element_counts = Counter(chunkFreqs)
 
-                chunkFreqs = freqs[i:endIndex]
-                chunkFreqs = [self.frequencies[self.closest_value_index(self.frequencies, curr)] for curr in chunkFreqs]
-
-                # Count occurrences of each element in the list
-                element_counts = Counter(chunkFreqs)
-
-                # Get the element with the maximum occurrence
-                mostCommon = element_counts.most_common(1)
-                if len(mostCommon) == 0:
-                    continue
-                currFreq = mostCommon[0][0]
-                currSecond = (seconds[i] + seconds[endIndex]) / 2
+            # Get the element with the maximum occurrence
+            mostCommon = element_counts.most_common(1)
+            if len(mostCommon) == 0:
+                continue
+            currFreq = mostCommon[0][0]
+            currSecond = (seconds[i] + seconds[endIndex]) / 2
 
             currSecond = round(currSecond, 3)
             if currSecond - lastSecond > self.MIN_TIME_FOR_BREAK:  # silence in original song
@@ -371,13 +430,14 @@ class OutOfTune:
             currNote = self.freqToNote(freq)
             print(f"{second}: {currNote}")
 
-        # plt.plot(result.keys(), result.values())
-        # plt.title("After chunk filtering")
-        # plt.legend()
-        # plt.show()
-        # plt.savefig("FilteredGraph")
+        plt.plot(result.keys(), result.values())
+        plt.title("After chunk filtering")
+        plt.legend()
+        plt.show()
+        plt.savefig("FilteredGraph")
 
         return result
+
 
     def read_from_wav(self, fileName, printGraph):
 
@@ -507,6 +567,10 @@ def compareTest(archivedName, micName):
 
     micSongData = getDataFromFile(micName)
 
+    if archivedSongData is None or micSongData is None:
+        print("No files to compare")
+        return
+
     compareDTW(micSongData, archivedSongData)
 
     #micString = listToString(micSongData.getFrequencies())
@@ -521,7 +585,7 @@ if __name__ == "__main__":
 
     printGraph = True
 
-    #getSongData("mary.wav", printGraph)
+    #getSongData("yesterday23.wav", printGraph)
 
     #compareTest("aMic", "aMicMic")
 
