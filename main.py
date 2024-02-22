@@ -292,6 +292,10 @@ class OutOfTune:
 
         self.read_from_wav(record_path, True)
 
+        archivedSongName = self.songName[:-3]
+        micSongName = self.songName
+        compareTest(archivedSongName, micSongName)
+
     def save_in_wav(self, frames):
         file_path = getSongWavPath(self.songName) + '.wav'
 
@@ -447,15 +451,26 @@ class OutOfTune:
 
     def plotGraphWav(self, seconds, freq, confidence):
 
-        # Create two separate plots for estimated pitch and confidence
-        fig, axs = plt.subplots(2, 1, figsize=(10, 8))
+        #Graph without confidence
+        plt.plot(seconds, freq, label='Estimated pitch (Hz)', color='blue')
+        plt.xlabel('Tims (s)')
+        plt.ylabel('Frequency (Hz)')
+        plt.title('Estimated Pitch')
+        plt.legend()
 
-        # Plot the estimated pitch over time
-        axs[0].plot(seconds, freq, label='Estimated pitch (Hz)', color='blue')
-        axs[0].set_xlabel('Time (s)')
-        axs[0].set_ylabel('Frequency (Hz)')
-        axs[0].set_title('Estimated Pitch')
-        axs[0].legend()
+        plt.tight_layout()
+        plt.show()
+        plt.savefig('wavGraph.png')
+
+        # two separate plots for estimated pitch and confidence
+        # fig, axs = plt.subplots(2, 1, figsize=(10, 8))
+        #
+        # # Plot the estimated pitch over time
+        # axs[0].plot(seconds, freq, label='Estimated pitch (Hz)', color='blue')
+        # axs[0].set_xlabel('Time (s)')
+        # axs[0].set_ylabel('Frequency (Hz)')
+        # axs[0].set_title('Estimated Pitch')
+        # axs[0].legend()
 
         # # Plot the confidence over time
         # axs[1].plot(seconds, confidence, label='Confidence', color='green')
@@ -464,10 +479,13 @@ class OutOfTune:
         # axs[1].set_title('Confidence')
         # axs[1].legend()
 
-        plt.tight_layout()
-        plt.show()
 
-        fig.savefig('wavGraph.png')
+        # Plot the estimated pitch over time
+        #
+        # plt.tight_layout()
+        # plt.show()
+
+        #fig.savefig('wavGraph.png')
 
         return
 
@@ -517,10 +535,14 @@ def listToString(freqList):
     return result
 
 
-def compareTest():
-    archivedSongData = getDataFromFile("Viva La Vida 15Mic")
+def compareTest(archivedName, micName):
+    archivedSongData = getDataFromFile(archivedName)
 
-    micSongData = getDataFromFile("Viva La Vida 15MicMic")
+    micSongData = getDataFromFile(micName)
+
+    if archivedSongData is None or micSongData is None:
+        print("No files to compare")
+        return
 
     compareDTW(micSongData, archivedSongData)
 
@@ -536,8 +558,10 @@ if __name__ == "__main__":
 
     printGraph = True
 
-    #getSongData("Viva La Vida 15.wav", printGraph)
+    #getSongData("The Scientist 25.wav", printGraph)
 
-    compareTest()
+
+    #compareTest()
+    #compareTest("yesterday23", "yesterday23Mic")
 
 
