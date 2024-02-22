@@ -507,12 +507,12 @@ def compareTest():
 if __name__ == "__main__":
     oot = OutOfTune()
 
-    oot.read_from_mic()
+    #oot.read_from_mic()
 
     printGraph = True
 
     #getSongData("mary.wav", printGraph)
 
-    #compareTest()
+    compareTest()
 
 

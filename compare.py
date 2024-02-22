@@ -7,12 +7,8 @@ from dtaidistance import dtw_visualisation as dtwvis, dtw
 from dtwParallel import dtw_functions
 from dtwalign import dtw as dtwAlignFunc
 
-# from shapedtw.shapedtw import shape_dtw
-# from shapedtw.shapeDescriptors import SlopeDescriptor, PAADescriptor, CompoundDescriptor
-# from shapedtw.dtwPlot import dtwPlot
 from filesAccess import getDataFromFile, FileData
 import scipy.spatial.distance as d
-from tslearn.preprocessing import TimeSeriesScalerMeanVariance
 from tslearn import metrics
 
 
@@ -85,17 +81,6 @@ def dtwvisTest(x, y):
     ax[1].set_title('Archived Version')
     fig.tight_layout()
     plt.show()
-
-
-# Slow
-# Only return graph
-# https://discord.com/channels/1183328278983999579/1184833831686111365/1186586000865108028
-def dtwParallelTest(x, y):  # Slow
-
-    # Calculate DTW and get visualization
-    result = dtw_functions.dtw(x, y, get_visualization=True)
-
-    print(result)
 
 
 def printNotesMatches(x, y, path, xTime, yTime):
@@ -217,9 +202,8 @@ def compareDTW(micFreq: FileData, archivedFreq: FileData):
     x = np.array([float(curr) for curr in x])
     y = np.array([float(curr) for curr in y])
 
-    # fastDTWTest(x, y)
+    #fastDTWTest(x, y)
     #dtwvisTest(x, y)            #prints graph
-    #dtwParallelTest(x, y)
     lcssAndDTW(x, y, xTime, yTime)
     #dtwAlignTest(x, y, xTime, yTime)
 
