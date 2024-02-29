@@ -2,7 +2,6 @@ import crepe
 from matplotlib import pyplot as plt
 from scipy.io import wavfile
 import crepe
-import librosa
 import matplotlib.pyplot as plt
 import resampy
 import tensorflow as tf

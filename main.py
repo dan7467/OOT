@@ -501,7 +501,7 @@ class OutOfTune:
 
     def getNameOfSongFromInput(self):
         songName = input("Write the name of the song you want to compare to, or None to just use mic: ")
-        if songName.lower() == 'none':
+        if songName.lower() == 'none' or songName == '':
             return None
         if checkIfSongDataExists(songName):
             fileData = getSongData(songName, False)
