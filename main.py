@@ -81,6 +81,7 @@ class OutOfTune:
         self.stream = None
         self.pa = None
         self.matchingToSongBool = False
+        self.TIME_DIFF = 0
         self.CONFIDENCE_LEVEL = 0.9
         #self.CREPE_STEP_SIZE = 30   #in milliseconds
         self.CREPE_STEP_SIZE = int(self.TIME_TO_PROCESS * 1000)  #if the time to process is 0.1 then step size is 100 ms
@@ -88,6 +89,7 @@ class OutOfTune:
         self.songName = ""
         self.currFileData = None
         self.piano = self.createPiano(self.root)
+        self.TIME_UNTIL_FIRST_NOTE_MIC = 6  #This version of the piano, the real notes from mic starts from second 6
 
 
     def createPiano(self, root):
@@ -101,7 +103,9 @@ class OutOfTune:
         return self.tunerNotes[freq]
 
     def start_timer(self):
-        #print("Buffer size: ", self.buffer_size)
+        print("Buffer size: ", self.buffer_size)
+        print("Rate: ", self.rate_mic)
+        print("Time of each chunk: ", self.buffer_size / self.rate_mic)
         self.pa = pyaudio.PyAudio()
         self.stream = self.pa.open(
             format=self.FORMAT,
@@ -266,13 +270,15 @@ class OutOfTune:
         fileData = oot.getNameOfSongFromInput()
         self.matchingToSongBool = type(fileData) is FileData
         self.songName = "tempMic"
+        dictFromArchivedSong = None
         if self.matchingToSongBool:
             print("Comparing to a song!")
             self.currFileData = fileData
-            # ensure the time between each note printed is the same as the archived version!
-            self.rate_mic = int(fileData.sampleRate)
-            self.buffer_size = int(self.rate_mic * fileData.durationToProcess)
+            # # ensure the time between each note printed is the same as the archived version!
+            # self.rate_mic = int(fileData.sampleRate)
+            # self.buffer_size = int(self.rate_mic * fileData.durationToProcess)
             self.songName = fileData.songName + 'Mic'
+            dictFromArchivedSong = fileData.notesDict
         elif type(fileData) is str:
             self.songName = fileData + 'Mic'
 
@@ -283,6 +289,10 @@ class OutOfTune:
         # Gets here after the stop button is pushed!
         print("Recording stopped")
 
+        if dictFromArchivedSong is not None:
+            self.adjustMicTimesAccordingToArchive(dictFromArchivedSong, self.dictFromMic)
+
+
         print("\n\nFirst version notes")
         self.removeDuplicatesFromDict(list(self.dictFromMic.keys()), list(self.dictFromMic.values()), False)
 
@@ -290,11 +300,48 @@ class OutOfTune:
 
         # Until here we saved the recorded in a wav file, now we analyze it and save the data!
 
+        #Trim from the wav all the unnecessary start (TIME DIFF)
+        self.trimStartOfWavFile(record_path)
+
         self.read_from_wav(record_path, True)
 
         archivedSongName = self.songName[:-3]
         micSongName = self.songName
         compareTest(archivedSongName, micSongName)
+
+
+    def trimStartOfWavFile(self, filePath):
+        sample_rate, data = wavfile.read(filePath)
+
+        # Calculate the number of samples to skip (4 seconds * sample rate)
+        samples_to_skip = int(self.TIME_DIFF * sample_rate)
+
+        # Trim the audio data
+        trimmed_data = data[samples_to_skip:]
+
+        # Write the trimmed data to the output WAV file
+        wavfile.write(filePath, sample_rate, trimmed_data)
+
+    def adjustMicTimesAccordingToArchive(self, dictFromArchivedSong, dictFromMic):
+        firstArchivedTime = self.getFirstTimeOfRealNoteFromSecondVar(dictFromArchivedSong, 0)
+        firstMicTime = self.getFirstTimeOfRealNoteFromSecondVar(dictFromMic, self.TIME_UNTIL_FIRST_NOTE_MIC)
+        self.TIME_DIFF = round(firstMicTime - firstArchivedTime, 3)
+
+        newMicDict = dict()
+        for sec, freq in dictFromMic.items():
+            if sec > self.TIME_UNTIL_FIRST_NOTE_MIC:
+                newTime = round(sec - self.TIME_DIFF, 3)
+                if  newTime > 0:
+                    newMicDict[newTime] = freq
+
+        self.dictFromMic = newMicDict
+
+    @staticmethod
+    def getFirstTimeOfRealNoteFromSecondVar(dict1, startingFromSecond):
+        for sec, freq in dict1.items():
+            if freq != 0 and sec > startingFromSecond:
+                return sec
+        return 0
 
     def save_in_wav(self, frames):
         file_path = getSongWavPath(self.songName) + '.wav'
@@ -514,6 +561,7 @@ class OutOfTune:
         pass
 
 
+
 def getSongData(file, printBool):
     songName = file.split('.')[0]
 
@@ -558,7 +606,7 @@ if __name__ == "__main__":
 
     printGraph = True
 
-    #getSongData("The Scientist 25.wav", printGraph)
+    #getSongData("yesterday23.wav", printGraph)
 
 
     #compareTest()
