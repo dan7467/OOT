@@ -267,7 +267,7 @@ class OutOfTune:
 
     def read_from_mic(self):
 
-        fileData = oot.getNameOfSongFromInput()
+        fileData = self.getNameOfSongFromInput()
         self.matchingToSongBool = type(fileData) is FileData
         self.songName = "tempMic"
         dictFromArchivedSong = None
@@ -284,7 +284,7 @@ class OutOfTune:
 
         print("Sample Rate: ", self.rate_mic)
 
-        oot.open_timer_thread()
+        self.open_timer_thread()
 
         # Gets here after the stop button is pushed!
         print("Recording stopped")
@@ -552,7 +552,7 @@ class OutOfTune:
         if songName.lower() == 'none' or songName == '':
             return None
         if checkIfSongDataExists(songName):
-            fileData = getSongData(songName, False)
+            fileData = getSongData(songName, False, self)
             return fileData
         else:
             print("Song does not exists!")
@@ -563,13 +563,13 @@ class OutOfTune:
 
 
 
-def getSongData(file, printBool):
+def getSongData(file, printBool, oot1):
     songName = file.split('.')[0]
 
     # If the song hadn't been analyzed
     if not checkIfSongDataExists(songName):
         wavPath = getSongWavPath(file)
-        oot.read_from_wav(wavPath, printBool)
+        oot1.read_from_wav(wavPath, printBool)
 
     fileData = getDataFromFile(songName)
     print("Got data from file")
@@ -601,18 +601,16 @@ def compareTest(archivedName, micName):
 
 
 if __name__ == "__main__":
-    oot = OutOfTune()
+    #oot = OutOfTune()
 
-    oot.read_from_mic()
+    #oot.read_from_mic()
 
     printGraph = True
 
     #getSongData("yesterday23.wav", printGraph)
 
 
-    #compareTest()
-    #compareTest("yesterday23", "yesterday23Mic")
-
+    compareTest("YonaYesMic", "YonaYesMicMic")
     #updated version
 
 
