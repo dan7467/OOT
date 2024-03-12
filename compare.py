@@ -239,8 +239,8 @@ def alignedDTWBarPlot(x, y, dtw_path):
     # Show the plot
     plt.tight_layout()
 
+    plt.savefig("Bar Plot.png")
     plt.show()
-    plt.savefig("Aligned Graphs.png")
 
 #Remove duplicate indices from the mic version, so there will be only NUM to NUM match, not NUMS to NUM!
 def removeDuplicatesFromXPath(x, y, dtw_path):

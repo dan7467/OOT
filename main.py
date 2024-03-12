@@ -612,7 +612,7 @@ if __name__ == "__main__":
     #getSongData("yesterday23.wav", printGraph)
 
 
-    #compareTest("mary", "maryMic")
+    #compareTest("yesterday23", "yesterday23Mic")
     #updated version
 
 
