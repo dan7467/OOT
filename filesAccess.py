@@ -30,6 +30,12 @@ def getSongWavPath(songName):
     return WAV_PATH + songName
 
 
+def printAvailableSongs():
+    print("All the available songs:")
+    for file_name in os.listdir(PATH):
+        if file_name.endswith('.txt'):
+            print(file_name[:-4])
+
 def checkIfFileExists(path):
     return os.path.isfile(path)
 
