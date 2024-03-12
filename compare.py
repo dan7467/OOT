@@ -249,6 +249,7 @@ def removeDuplicatesFromXPath(x, y, dtw_path):
 
     # Iterate through the DTW path
     for x_idx, y_idx in dtw_path:
+
         # Check if x index is already mapped to a y index
         if x_idx not in x_to_y_mapping:
             x_to_y_mapping[x_idx] = y_idx
@@ -260,13 +261,10 @@ def removeDuplicatesFromXPath(x, y, dtw_path):
     # Update the DTW path with the selected y indices
     dtw_path = [(x_idx, x_to_y_mapping[x_idx]) for x_idx in x_to_y_mapping]
 
-    # Update x and y sequences based on the updated DTW path
-    x = [x[i] for i, _ in dtw_path]
-    y = [y[j] for _, j in dtw_path]
+    # # Update x and y sequences based on the updated DTW path
+    # x = [x[i] for i, _ in dtw_path]
+    # y = [y[j] for _, j in dtw_path]
 
-    # print("Updated x:", x)
-    # print("Updated y:", y)
-    # print("Updated DTW path:", dtw_path)
 
     return np.array(x), np.array(y), dtw_path
 

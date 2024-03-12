@@ -21,11 +21,12 @@ import wave
 import pyaudio
 import tkinter as tk
 
+import filesAccess
 from VirtualPiano import VirtualPiano
 
 from compare import compareDTW
 from crepeTest import testCrepe, crepePrediction
-from filesAccess import saveToFile, getDataFromFile, checkIfSongDataExists, getSongWavPath, FileData
+from filesAccess import saveToFile, getDataFromFile, checkIfSongDataExists, getSongWavPath, FileData, printAvailableSongs
 from numba import jit, cuda
 
 class OutOfTune:
@@ -458,11 +459,11 @@ class OutOfTune:
             currNote = self.freqToNote(freq)
             print(f"{second}: {currNote}")
 
-        plt.plot(result.keys(), result.values())
-        plt.title("After chunk filtering")
-        plt.legend()
-        plt.show()
-        plt.savefig("FilteredGraph")
+        # plt.plot(result.keys(), result.values())
+        # plt.title("After chunk filtering")
+        # plt.legend()
+        # plt.show()
+        # plt.savefig("FilteredGraph")
 
         return result
 
@@ -499,16 +500,16 @@ class OutOfTune:
 
     def plotGraphWav(self, seconds, freq, confidence):
 
-        #Graph without confidence
-        plt.plot(seconds, freq, label='Estimated pitch (Hz)', color='blue')
-        plt.xlabel('Tims (s)')
-        plt.ylabel('Frequency (Hz)')
-        plt.title('Estimated Pitch')
-        plt.legend()
-
-        plt.tight_layout()
-        plt.show()
-        plt.savefig('wavGraph.png')
+        # #Graph without confidence
+        # plt.plot(seconds, freq, label='Estimated pitch (Hz)', color='blue')
+        # plt.xlabel('Tims (s)')
+        # plt.ylabel('Frequency (Hz)')
+        # plt.title('Estimated Pitch')
+        # plt.legend()
+        #
+        # plt.tight_layout()
+        # plt.show()
+        # plt.savefig('wavGraph.png')
 
         # two separate plots for estimated pitch and confidence
         # fig, axs = plt.subplots(2, 1, figsize=(10, 8))
@@ -548,6 +549,7 @@ class OutOfTune:
         self.stop_button.pack(expand=True)
 
     def getNameOfSongFromInput(self):
+        printAvailableSongs()
         songName = input("Write the name of the song you want to compare to, or None to just use mic: ")
         if songName.lower() == 'none' or songName == '':
             return None
@@ -601,16 +603,16 @@ def compareTest(archivedName, micName):
 
 
 if __name__ == "__main__":
-    #oot = OutOfTune()
+    oot = OutOfTune()
 
-    #oot.read_from_mic()
+    oot.read_from_mic()
 
     printGraph = True
 
     #getSongData("yesterday23.wav", printGraph)
 
 
-    compareTest("YonaYesMic", "YonaYesMicMic")
+    #compareTest("mary", "maryMic")
     #updated version
 
 
