@@ -32,9 +32,14 @@ def getSongWavPath(songName):
 
 def printAvailableSongs():
     print("All the available songs:")
-    for file_name in os.listdir(PATH):
+    dictSongs = dict()
+    for number, file_name in enumerate(os.listdir(PATH)):
         if file_name.endswith('.txt'):
-            print(file_name[:-4])
+            songStr = file_name[:-4]
+            print(f'{number}) {songStr}')
+            dictSongs[str(number)] = songStr
+
+    return dictSongs
 
 def checkIfFileExists(path):
     return os.path.isfile(path)

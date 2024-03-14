@@ -206,7 +206,7 @@ class OutOfTune:
         self.dictFromMic[elapsed_time] = self.frequencies[targetNote]
 
         # Print the note with the elapsed time and error percentage
-        print(f"{elapsed_time}: {curr_note}")
+        #print(f"{elapsed_time}: {curr_note}")
 
 
         # #Trying crepe
@@ -549,8 +549,12 @@ class OutOfTune:
         self.stop_button.pack(expand=True)
 
     def getNameOfSongFromInput(self):
-        printAvailableSongs()
-        songName = input("Write the name of the song you want to compare to, or None to just use mic: ")
+        songsDict = printAvailableSongs()
+        songNumOrStr = input("Write the Number of the song you want to compare to, or write new name for Not comparing: ")
+        if songNumOrStr in songsDict.keys():
+            songName = songsDict[songNumOrStr]
+        else:
+            songName = songNumOrStr
         if songName.lower() == 'none' or songName == '':
             return None
         if checkIfSongDataExists(songName):
@@ -609,7 +613,7 @@ if __name__ == "__main__":
 
     printGraph = True
 
-    #getSongData("yesterday23.wav", printGraph)
+    #getSongData("mary.wav", printGraph, oot)
 
 
     #compareTest("yesterday23", "yesterday23Mic")
