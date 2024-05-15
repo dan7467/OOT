@@ -15,7 +15,9 @@
 
     6. pip install matplotlib
 
-    7. run main function in './main.py'
+    7. pip install pymongo
+
+    8. run main function in './main.py'
 
 ## Application Usage:
 
