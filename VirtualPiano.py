@@ -33,7 +33,9 @@ class VirtualPiano(tk.Canvas):
                 self.create_rectangle(x1, piano_height / 2, x2, piano_height, fill='white', outline='black')
                 self.create_text(x1 + key_width / 2, piano_height * 5 / 6, text=note, font=('Arial', 8))
 
-    def update_piano(self, note):
+    def update_piano(self, note, errorOccured):
+        if errorOccured:
+            return
         self.highlight_key(note)
 
     def highlight_key(self, note):
