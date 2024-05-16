@@ -1,5 +1,7 @@
 import os
+import wave
 
+import pyaudio
 
 PATH = './songsData/'
 DELIMITER = ' ; '
@@ -103,3 +105,41 @@ def getDataFromFile(songName):
     fileData = FileData(songName, sampleCounter, recordingLenSeconds, duration_to_process, sampleRate, freqDict)
     return fileData
 
+
+def getShortAudioClip(songName, startingSecond, endingSecond):
+    path = getSongWavPath(songName) + ".wav"
+    if not checkIfFileExists(path):
+        print("file not found")
+        return
+    with wave.open(path, 'rb') as wav_file:
+        # Get the sample width (in bytes)
+        sample_width = wav_file.getsampwidth()
+
+        # Get the frame rate (number of frames per second)
+        frame_rate = wav_file.getframerate()
+        try:
+            # Calculate the starting and ending frames
+            starting_frame = int(startingSecond * frame_rate)
+            ending_frame = int(endingSecond * frame_rate)
+
+            # Set the file position to the starting frame
+            wav_file.setpos(starting_frame)
+
+            # Read the frames for the desired section
+            frames = wav_file.readframes(ending_frame - starting_frame)
+        except:
+            print("Seconds not valid")
+            return
+
+    # Play the extracted audio
+    p = pyaudio.PyAudio()
+    stream = p.open(format=p.get_format_from_width(sample_width),
+                    channels=wav_file.getnchannels(),
+                    rate=frame_rate,
+                    output=True)
+    stream.write(frames)
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+
+    #return frames, sample_width, frame_rate

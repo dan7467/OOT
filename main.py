@@ -5,14 +5,10 @@
 # pip install keyboard
 # pip install matplotlib
 # https://github.com/Marcuccio/Musical-note-detector/tree/master
-import math
 import threading
 from collections import Counter
 
 import crepe
-import numpy as np
-from matplotlib import pyplot as plt
-from moviepy.audio.io.AudioFileClip import AudioFileClip
 from scipy.io import wavfile
 from scipy.signal import fftconvolve
 from numpy import argmax, diff
@@ -21,14 +17,10 @@ import wave
 import pyaudio
 import tkinter as tk
 
-import filesAccess
 from VirtualPiano import VirtualPiano
 
-from compare import compareDTW
-from crepeTest import testCrepe, crepePrediction
-from filesAccess import saveToFile, getDataFromFile, checkIfSongDataExists, getSongWavPath, FileData, \
-    printAvailableSongs
-from numba import jit, cuda
+from compare import *
+from filesAccess import *
 
 
 class OutOfTune:
@@ -92,6 +84,7 @@ class OutOfTune:
             self.TIME_TO_PROCESS * 1000)  # if the time to process is 0.1 then step size is 100 ms
         # check if it should be hard coded ot dynamic
         self.songName = ""
+        self.newMicSOngName = ""
         self.currFileData = None
         self.piano = self.createPiano(self.root)
         self.TIME_UNTIL_FIRST_NOTE_MIC = 6  # This version of the piano, the real notes from mic starts from second 6
@@ -155,7 +148,6 @@ class OutOfTune:
 
         self.stop_flag = True  # Set stop flag to True to stop the microphone input loop
 
-
     def abortRecordingAndTimer(self):
         self.dictFromMic = {}
         self.recorded_frames_crepe = []
@@ -166,8 +158,6 @@ class OutOfTune:
         self.root.quit()
         self.stop_flag = True  # Set stop flag to True to stop the microphone input loop
         self.aborted = True
-
-
 
     # display timer in a different window
     def display_timer(self):
@@ -302,10 +292,12 @@ class OutOfTune:
             # # ensure the time between each note printed is the same as the archived version!
             # self.rate_mic = int(fileData.sampleRate)
             # self.buffer_size = int(self.rate_mic * fileData.durationToProcess)
-            self.songName = fileData.songName + 'Mic'
+            self.newMicSOngName = fileData.songName + 'Mic'
+            #self.songName = fileData.songName + 'Mic'
             dictFromArchivedSong = fileData.notesDict
         elif type(fileData) is str:
-            self.songName = fileData + 'Mic'
+            #self.songName = fileData + 'Mic'
+            self.newMicSOngName = fileData
 
         # print("Sample Rate: ", self.rate_mic)
 
@@ -314,7 +306,6 @@ class OutOfTune:
             self.open_timer_thread()
         except:
             self.errorOccurred = True
-
 
         # Gets here after the stop button is pushed!
         print("Recording stopped")
@@ -328,7 +319,8 @@ class OutOfTune:
             print("\n\nFirst version notes")
             self.removeDuplicatesFromDict(list(self.dictFromMic.keys()), list(self.dictFromMic.values()), False)
 
-            record_path = getSongWavPath(self.songName) + '.wav'
+            #record_path = getSongWavPath(self.songName) + '.wav'
+            record_path = getSongWavPath(self.newMicSOngName) + '.wav'
 
             # Until here we saved the recorded in a wav file, now we analyze it and save the data!
 
@@ -339,9 +331,11 @@ class OutOfTune:
             if not self.errorOccurred:
                 self.read_from_wav(record_path, True)
 
-                archivedSongName = self.songName[:-3]
-                micSongName = self.songName
-                compareTest(archivedSongName, micSongName)
+                # archivedSongName = self.songName[:-3]
+                # micSongName = self.songName
+                archivedSongName = self.songName
+                micSongName = self.newMicSOngName
+                self.compareTest(archivedSongName, micSongName)
 
     def trimStartOfWavFile(self, filePath):
         try:
@@ -357,7 +351,6 @@ class OutOfTune:
             wavfile.write(filePath, sample_rate, trimmed_data)
         except:
             self.errorOccurred = True
-
 
     def adjustMicTimesAccordingToArchive(self, dictFromArchivedSong, dictFromMic):
         firstArchivedTime = self.getFirstTimeOfRealNoteFromSecondVar(dictFromArchivedSong, 0)
@@ -381,8 +374,8 @@ class OutOfTune:
         return 0
 
     def save_in_wav(self, frames):
-        file_path = getSongWavPath(self.songName) + '.wav'
-
+        #file_path = getSongWavPath(self.songName) + '.wav'
+        file_path = getSongWavPath(self.newMicSOngName) + '.wav'
         wf = wave.open(file_path, 'wb')
         wf.setnchannels(1)
         wf.setsampwidth(self.pa.get_sample_size(pyaudio.paInt16))
@@ -607,6 +600,72 @@ class OutOfTune:
     def filterNoise(self, reliable_time, reliable_frequency):
         pass
 
+    def getShortAudioClipFromEntries(self, name, startingIndex, endingIndex, dtwElementsInfo):
+        startingIndex = int(startingIndex)
+        endingIndex = int(endingIndex)
+        if name == 1:
+            songName = self.newMicSOngName
+            startingSecond, endingSecond = getClosestElementsWIthIndices(dtwElementsInfo, startingIndex,
+                                                                         endingIndex, "x")
+        else:
+            songName = self.songName
+            startingSecond, endingSecond = getClosestElementsWIthIndices(dtwElementsInfo, startingIndex,
+                                                                         endingIndex, "y")
+
+
+        getShortAudioClip(songName, startingSecond, endingSecond)
+
+    def hearClips(self, dtwElements):
+        window = tk.Tk()
+
+        # file_label = tk.Label(window, text="File Name:")
+        # file_label.pack()
+        # file_name_entry = tk.Entry(window)
+        # file_name_entry.pack()
+
+        starting_label = tk.Label(window, text="Starting Second:")
+        starting_label.pack()
+        starting_entry = tk.Entry(window)
+        starting_entry.pack()
+
+        ending_label = tk.Label(window, text="Ending Second:")
+        ending_label.pack()
+        ending_entry = tk.Entry(window)
+        ending_entry.pack()
+
+
+        play_button_mic = tk.Button(window, text="Play from original",
+                                    command=lambda: self.getShortAudioClipFromEntries(2, starting_entry.get(),
+                                                                                       ending_entry.get(), dtwElements))
+        play_button_orig = tk.Button(window, text="Play from mic",
+                                        command=lambda: self.getShortAudioClipFromEntries(1,
+                                                                                          starting_entry.get(),
+                                                                                          ending_entry.get(),
+                                                                                          dtwElements))
+        play_button_mic.pack()
+        play_button_orig.pack()
+
+        def on_closing():
+            window.destroy()
+
+        window.protocol("WM_DELETE_WINDOW", on_closing)
+        window.mainloop()
+
+
+    def compareTest(self, archivedName, micName):
+        archivedSongData = getDataFromFile(archivedName)
+
+        micSongData = getDataFromFile(micName)
+
+        if archivedSongData is None or micSongData is None:
+            print("No files to compare")
+            return
+
+        self.songName = archivedSongData.songName
+        self.newMicSOngName = micSongData.songName
+        return compareDTW(micSongData, archivedSongData)
+
+
 
 def getSongData(file, printBool, oot1):
     songName = file.split('.')[0]
@@ -629,30 +688,23 @@ def listToString(freqList):
     return result
 
 
-def compareTest(archivedName, micName):
-    archivedSongData = getDataFromFile(archivedName)
 
-    micSongData = getDataFromFile(micName)
 
-    if archivedSongData is None or micSongData is None:
-        print("No files to compare")
-        return
 
-    compareDTW(micSongData, archivedSongData)
-
-    # micString = listToString(micSongData.getFrequencies())
-    # archivedString = listToString(archivedSongData.getFrequencies())
-    # compareStrings(micString, archivedString)
 
 
 if __name__ == "__main__":
     oot = OutOfTune()
 
-    oot.read_from_mic()
+    # oot.read_from_mic()
 
     printGraph = True
 
+    # getShortAudioClip("Viva La Vida 15", -1, 5)
+
     # getSongData("Every Breath You Take.wav", printGraph, oot)
 
-    # compareTest("yesterday23", "yesterday23Mic")
+    dtwElements = oot.compareTest("mary", "maryMic")
+
+    oot.hearClips(dtwElements)
     # updated version
