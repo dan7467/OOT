@@ -5,14 +5,10 @@
 # pip install keyboard
 # pip install matplotlib
 # https://github.com/Marcuccio/Musical-note-detector/tree/master
-import math
 import threading
 from collections import Counter
 
 import crepe
-import numpy as np
-from matplotlib import pyplot as plt
-from moviepy.audio.io.AudioFileClip import AudioFileClip
 from scipy.io import wavfile
 from scipy.signal import fftconvolve
 from numpy import argmax, diff
@@ -21,13 +17,11 @@ import wave
 import pyaudio
 import tkinter as tk
 
-import filesAccess
 from VirtualPiano import VirtualPiano
 
-from compare import compareDTW
-from crepeTest import testCrepe, crepePrediction
-from filesAccess import saveToFile, getDataFromFile, checkIfSongDataExists, getSongWavPath, FileData, printAvailableSongs
-from numba import jit, cuda
+from compare import *
+from filesAccess import *
+
 
 class OutOfTune:
     def __init__(self):
@@ -44,7 +38,7 @@ class OutOfTune:
         # self.buffer_size = 4096  #= CHUNK size
         # self.TIME_TO_PROCESS = self.buffer_size / self.rate_mic
 
-        #if we want to do time_to_process = 0.25s then we need (buffer_size)4096/16,000(RATE) ~ 0.25
+        # if we want to do time_to_process = 0.25s then we need (buffer_size)4096/16,000(RATE) ~ 0.25
 
         self.MIN_TIME_FOR_BREAK = 3  # if there is distance of more than this between 2 notes, we put 0 between them
         # for example: 5:20 - D , 5:30 - D , 5:44 - D , 7:44 - C  -> 5:20 - D , 6:44 - 0 , 7:44 - C
@@ -74,6 +68,7 @@ class OutOfTune:
         self.label = None
         self.start_button = None
         self.stop_button = None
+        self.deleteCurrRecording_button = None
         self.setTimerWindowButtons()
 
         self.start_flag = False
@@ -84,14 +79,17 @@ class OutOfTune:
         self.matchingToSongBool = False
         self.TIME_DIFF = 0
         self.CONFIDENCE_LEVEL = 0.9
-        #self.CREPE_STEP_SIZE = 30   #in milliseconds
-        self.CREPE_STEP_SIZE = int(self.TIME_TO_PROCESS * 1000)  #if the time to process is 0.1 then step size is 100 ms
-        #check if it should be hard coded ot dynamic
+        # self.CREPE_STEP_SIZE = 30   #in milliseconds
+        self.CREPE_STEP_SIZE = int(
+            self.TIME_TO_PROCESS * 1000)  # if the time to process is 0.1 then step size is 100 ms
+        # check if it should be hard coded ot dynamic
         self.songName = ""
+        self.newMicSOngName = ""
         self.currFileData = None
         self.piano = self.createPiano(self.root)
-        self.TIME_UNTIL_FIRST_NOTE_MIC = 6  #This version of the piano, the real notes from mic starts from second 6
-
+        self.TIME_UNTIL_FIRST_NOTE_MIC = 6  # This version of the piano, the real notes from mic starts from second 6
+        self.errorOccurred = False
+        self.aborted = False
 
     def createPiano(self, root):
         piano = VirtualPiano(root, width=1600, height=800)  # Adjust width here
@@ -104,9 +102,9 @@ class OutOfTune:
         return self.tunerNotes[freq]
 
     def start_timer(self):
-        print("Buffer size: ", self.buffer_size)
-        print("Rate: ", self.rate_mic)
-        print("Time of each chunk: ", self.buffer_size / self.rate_mic)
+        # print("Buffer size: ", self.buffer_size)
+        # print("Rate: ", self.rate_mic)
+        # print("Time of each chunk: ", self.buffer_size / self.rate_mic)
         self.pa = pyaudio.PyAudio()
         self.stream = self.pa.open(
             format=self.FORMAT,
@@ -133,7 +131,6 @@ class OutOfTune:
             notes_sequence = self.piano.transormDictToTuples(notesDict)
             self.piano.display_notes_sequence3(notes_sequence)
 
-
     def transformFreqsDictToNotesDict(self, freqDict):
         newDict = dict()
         for currTime, freq in freqDict.items():
@@ -141,26 +138,49 @@ class OutOfTune:
         return newDict
 
     def stop_timer(self):
-        self.stream.stop_stream()
-        self.stream.close()
-        self.pa.terminate()
-        self.root.quit()
+        try:
+            self.stream.stop_stream()
+            self.stream.close()
+            self.pa.terminate()
+        except:
+            print("error")
+            self.errorOccurred = True
+        finally:
+            self.root.quit()
+            if self.recorded_frames_crepe:
+                self.save_in_wav(self.recorded_frames_crepe)
 
-        if self.recorded_frames_crepe:
-            self.save_in_wav(self.recorded_frames_crepe)
+            self.stop_flag = True  # Set stop flag to True to stop the microphone input loop
 
-        self.stop_flag = True  # Set stop flag to True to stop the microphone input loop
+    def abortRecordingAndTimer(self):
+        self.dictFromMic = {}
+        self.recorded_frames_crepe = []
+        try:
+            self.stream.stop_stream()
+            self.stream.close()
+            self.pa.terminate()
+        except:
+            print("error")
+            self.errorOccurred = True
+        finally:
+            self.root.quit()
+            self.stop_flag = True  # Set stop flag to True to stop the microphone input loop
+            self.aborted = True
 
     # display timer in a different window
     def display_timer(self):
-        while not self.stop_flag:
-            elapsed_time = time.time() - self.start_time
-            elapsed_minutes = int(elapsed_time // 60)
-            elapsed_seconds = int(elapsed_time % 60)
-            self.label.config(text=f"Elapsed Time: {elapsed_minutes:02}:{elapsed_seconds:02}")
-            time.sleep(1)  # Update every second
-
-        self.root.quit()
+        try:
+            while not self.stop_flag:
+                elapsed_time = time.time() - self.start_time
+                elapsed_minutes = int(elapsed_time // 60)
+                elapsed_seconds = int(elapsed_time % 60)
+                self.label.config(text=f"Elapsed Time: {elapsed_minutes:02}:{elapsed_seconds:02}")
+                time.sleep(1)  # Update every second
+        except:
+            self.dictFromMic = {}
+            self.errorOccurred = True
+        finally:
+            self.root.quit()
 
     def find(self, condition):
         res, = np.nonzero(np.ravel(condition))
@@ -206,8 +226,7 @@ class OutOfTune:
         self.dictFromMic[elapsed_time] = self.frequencies[targetNote]
 
         # Print the note with the elapsed time and error percentage
-        #print(f"{elapsed_time}: {curr_note}")
-
+        # print(f"{elapsed_time}: {curr_note}")
 
         # #Trying crepe
         # raw_data_signal = np.frombuffer(in_data, dtype=np.int16)
@@ -229,7 +248,7 @@ class OutOfTune:
         #
         # print(f"CREPE: {elapsed_time} : {freqs}, (most common-{most_commonNum})\n")
 
-        self.piano.update_piano(curr_note)
+        self.piano.update_piano(curr_note, self.errorOccurred)
 
         return in_data, pyaudio.paContinue
 
@@ -264,7 +283,10 @@ class OutOfTune:
         return in_data, pyaudio.paContinue
 
     def open_timer_thread(self):
-        self.root.mainloop()  # for the timerWindow and main window
+        try:
+            self.root.mainloop()  # for the timerWindow and main window
+        except:
+            self.errorOccurred = True
 
     def read_from_mic(self):
 
@@ -278,51 +300,66 @@ class OutOfTune:
             # # ensure the time between each note printed is the same as the archived version!
             # self.rate_mic = int(fileData.sampleRate)
             # self.buffer_size = int(self.rate_mic * fileData.durationToProcess)
-            self.songName = fileData.songName + 'Mic'
+            self.newMicSOngName = fileData.songName + 'Mic'
+            self.songName = fileData.songName
             dictFromArchivedSong = fileData.notesDict
         elif type(fileData) is str:
-            self.songName = fileData + 'Mic'
+            # self.songName = fileData + 'Mic'
+            self.newMicSOngName = fileData
 
-        print("Sample Rate: ", self.rate_mic)
+        # print("Sample Rate: ", self.rate_mic)
 
-        self.open_timer_thread()
+        try:
+            self.errorOccurred = False
+            self.open_timer_thread()
+        except:
+            self.errorOccurred = True
 
         # Gets here after the stop button is pushed!
         print("Recording stopped")
 
-        if dictFromArchivedSong is not None:
-            self.adjustMicTimesAccordingToArchive(dictFromArchivedSong, self.dictFromMic)
+        if self.errorOccurred or self.aborted:
+            print("Stopped in the middle, canceling")
+        else:
+            if dictFromArchivedSong is not None:
+                self.adjustMicTimesAccordingToArchive(dictFromArchivedSong, self.dictFromMic)
 
+            print("\n\nFirst version notes")
+            self.removeDuplicatesFromDict(list(self.dictFromMic.keys()), list(self.dictFromMic.values()), False)
 
-        print("\n\nFirst version notes")
-        self.removeDuplicatesFromDict(list(self.dictFromMic.keys()), list(self.dictFromMic.values()), False)
+            # record_path = getSongWavPath(self.songName) + '.wav'
+            record_path = getSongWavPath(self.newMicSOngName) + '.wav'
 
-        record_path = getSongWavPath(self.songName) + '.wav'
+            # Until here we saved the recorded in a wav file, now we analyze it and save the data!
 
-        # Until here we saved the recorded in a wav file, now we analyze it and save the data!
+            # Trim from the wav all the unnecessary start (TIME DIFF)
+            if self.TIME_DIFF > 0:
+                self.trimStartOfWavFile(record_path)
 
-        #Trim from the wav all the unnecessary start (TIME DIFF)
-        if self.TIME_DIFF > 0:
-            self.trimStartOfWavFile(record_path)
+            if not self.errorOccurred:
+                self.read_from_wav(record_path, True)
 
-        self.read_from_wav(record_path, True)
-
-        archivedSongName = self.songName[:-3]
-        micSongName = self.songName
-        compareTest(archivedSongName, micSongName)
-
+                # archivedSongName = self.songName[:-3]
+                # micSongName = self.songName
+                archivedSongName = self.songName
+                micSongName = self.newMicSOngName
+                dtwElements = self.compareTest(archivedSongName, micSongName)
+                self.hearClips(dtwElements)
 
     def trimStartOfWavFile(self, filePath):
-        sample_rate, data = wavfile.read(filePath)
+        try:
+            sample_rate, data = wavfile.read(filePath)
 
-        # Calculate the number of samples to skip (4 seconds * sample rate)
-        samples_to_skip = int(self.TIME_DIFF * sample_rate)
+            # Calculate the number of samples to skip (4 seconds * sample rate)
+            samples_to_skip = int(self.TIME_DIFF * sample_rate)
 
-        # Trim the audio data
-        trimmed_data = data[samples_to_skip:]
+            # Trim the audio data
+            trimmed_data = data[samples_to_skip:]
 
-        # Write the trimmed data to the output WAV file
-        wavfile.write(filePath, sample_rate, trimmed_data)
+            # Write the trimmed data to the output WAV file
+            wavfile.write(filePath, sample_rate, trimmed_data)
+        except:
+            self.errorOccurred = True
 
     def adjustMicTimesAccordingToArchive(self, dictFromArchivedSong, dictFromMic):
         firstArchivedTime = self.getFirstTimeOfRealNoteFromSecondVar(dictFromArchivedSong, 0)
@@ -333,7 +370,7 @@ class OutOfTune:
         for sec, freq in dictFromMic.items():
             if sec > self.TIME_UNTIL_FIRST_NOTE_MIC:
                 newTime = round(sec - self.TIME_DIFF, 3)
-                if  newTime > 0:
+                if newTime > 0:
                     newMicDict[newTime] = freq
 
         self.dictFromMic = newMicDict
@@ -346,8 +383,8 @@ class OutOfTune:
         return 0
 
     def save_in_wav(self, frames):
-        file_path = getSongWavPath(self.songName) + '.wav'
-
+        # file_path = getSongWavPath(self.songName) + '.wav'
+        file_path = getSongWavPath(self.newMicSOngName) + '.wav'
         wf = wave.open(file_path, 'wb')
         wf.setnchannels(1)
         wf.setsampwidth(self.pa.get_sample_size(pyaudio.paInt16))
@@ -420,14 +457,13 @@ class OutOfTune:
             else:
                 chunk_size = int(time_for_each_chunk / self.TIME_TO_PROCESS)
 
-
-        #example : step_size = 20 (its in ms) and we want the chunk to hold data of 0.1 seconds,
-        #so the size will be  0.1 / 0.001*20 = 5
+        # example : step_size = 20 (its in ms) and we want the chunk to hold data of 0.1 seconds,
+        # so the size will be  0.1 / 0.001*20 = 5
         lastSecond = 0
         lastFreq = 0
         freqsLen = len(freqs)
         for i in range(0, freqsLen, chunk_size):
-            endIndex = min(i+chunk_size, freqsLen - 1)      #so it will not overflow
+            endIndex = min(i + chunk_size, freqsLen - 1)  # so it will not overflow
 
             chunkFreqs = freqs[i:endIndex]
             chunkFreqs = [self.frequencies[self.closest_value_index(self.frequencies, curr)] for curr in chunkFreqs]
@@ -468,35 +504,36 @@ class OutOfTune:
         return result
 
     def read_from_wav(self, fileName, printGraph):
+        try:
+            songName = fileName.split('/')[-1].split('.')[0]
+            sr, y = wavfile.read(fileName)
 
-        songName = fileName.split('/')[-1].split('.')[0]
-        sr, y = wavfile.read(fileName)
+            seconds, frequency, confidence, _ = self.runCrepePrediction(y, sr)
 
-        seconds, frequency, confidence, _ = self.runCrepePrediction(y, sr)
+            # Filter out frequencies with confidence below 0.5
+            reliable_indices = confidence >= self.CONFIDENCE_LEVEL
+            reliable_confidence = confidence[reliable_indices]
+            reliable_time = seconds[reliable_indices]
+            reliable_frequency = frequency[reliable_indices]
 
-        # Filter out frequencies with confidence below 0.5
-        reliable_indices = confidence >= self.CONFIDENCE_LEVEL
-        reliable_confidence = confidence[reliable_indices]
-        reliable_time = seconds[reliable_indices]
-        reliable_frequency = frequency[reliable_indices]
+            if printGraph:
+                self.plotGraphWav(reliable_time, reliable_frequency, reliable_confidence)
 
-        if printGraph:
-            self.plotGraphWav(reliable_time, reliable_frequency, reliable_confidence)
+            print("\n\nCrepe version notes")
+            dict_filtered = self.removeDuplicatesFromDict(reliable_time, reliable_frequency, True)
 
-        print("\n\nCrepe version notes")
-        dict_filtered = self.removeDuplicatesFromDict(reliable_time, reliable_frequency, True)
+            fileData = FileData(songName, self.sampleCounter, 0, round(self.TIME_TO_PROCESS, 4),
+                                self.rate_mic, dict_filtered)
 
-        fileData = FileData(songName, self.sampleCounter, 0, round(self.TIME_TO_PROCESS, 4),
-                            self.rate_mic, dict_filtered)
+            saveToFile(fileData)
+        except:
+            self.errorOccurred = True
 
-        saveToFile(fileData)
-
-    #@jit(target_backend='cuda')
+    # @jit(target_backend='cuda')
     def runCrepePrediction(self, y, sr):
         # Call crepe to estimate pitch and confidence
         # , viterbi=True, step_size=10
         return crepe.predict(y, sr, model_capacity='large', step_size=self.CREPE_STEP_SIZE)
-
 
     def plotGraphWav(self, seconds, freq, confidence):
 
@@ -528,13 +565,12 @@ class OutOfTune:
         # axs[1].set_title('Confidence')
         # axs[1].legend()
 
-
         # Plot the estimated pitch over time
         #
         # plt.tight_layout()
         # plt.show()
 
-        #fig.savefig('wavGraph.png')
+        # fig.savefig('wavGraph.png')
 
         return
 
@@ -543,14 +579,25 @@ class OutOfTune:
         self.root.geometry("1600x900")  # Set window size
         self.label = tk.Label(self.root, text="", font=("Arial", 18))
         self.label.pack(expand=True)
+
         self.start_button = tk.Button(self.root, text="Start", command=self.start_timer)
         self.start_button.pack(expand=True)
+
         self.stop_button = tk.Button(self.root, text="Stop", command=self.stop_timer)
         self.stop_button.pack(expand=True)
 
+        self.deleteCurrRecording_button = tk.Button(self.root, text="Abort", command=self.abortRecordingAndTimer)
+        self.deleteCurrRecording_button.pack(expand=True)
+
+        def on_closing():
+            self.abortRecordingAndTimer()
+
+        self.root.protocol("WM_DELETE_WINDOW", on_closing)
+
     def getNameOfSongFromInput(self):
         songsDict = printAvailableSongs()
-        songNumOrStr = input("Write the Number of the song you want to compare to, or write new name for Not comparing: ")
+        songNumOrStr = input(
+            "Write the Number of the song you want to compare to, or write new name for Not comparing: ")
         if songNumOrStr in songsDict.keys():
             songName = songsDict[songNumOrStr]
         else:
@@ -566,6 +613,68 @@ class OutOfTune:
 
     def filterNoise(self, reliable_time, reliable_frequency):
         pass
+
+    def getShortAudioClipFromEntries(self, name, startingIndex, endingIndex, dtwElementsInfo):
+        startingIndex = int(startingIndex)
+        endingIndex = int(endingIndex)
+        if name == 1:
+            songName = self.newMicSOngName
+            startingSecond, endingSecond = getClosestElementsWIthIndices(dtwElementsInfo, startingIndex,
+                                                                         endingIndex, "x")
+        else:
+            songName = self.songName
+            startingSecond, endingSecond = getClosestElementsWIthIndices(dtwElementsInfo, startingIndex,
+                                                                         endingIndex, "y")
+
+        getShortAudioClip(songName, startingSecond, endingSecond)
+
+    def hearClips(self, dtwElements):
+        window = tk.Tk()
+
+        # file_label = tk.Label(window, text="File Name:")
+        # file_label.pack()
+        # file_name_entry = tk.Entry(window)
+        # file_name_entry.pack()
+
+        starting_label = tk.Label(window, text="Starting Second:")
+        starting_label.pack()
+        starting_entry = tk.Entry(window)
+        starting_entry.pack()
+
+        ending_label = tk.Label(window, text="Ending Second:")
+        ending_label.pack()
+        ending_entry = tk.Entry(window)
+        ending_entry.pack()
+
+        play_button_mic = tk.Button(window, text="Play from original",
+                                    command=lambda: self.getShortAudioClipFromEntries(2, starting_entry.get(),
+                                                                                      ending_entry.get(), dtwElements))
+        play_button_orig = tk.Button(window, text="Play from mic",
+                                     command=lambda: self.getShortAudioClipFromEntries(1,
+                                                                                       starting_entry.get(),
+                                                                                       ending_entry.get(),
+                                                                                       dtwElements))
+        play_button_mic.pack()
+        play_button_orig.pack()
+
+        def on_closing():
+            window.destroy()
+
+        window.protocol("WM_DELETE_WINDOW", on_closing)
+        window.mainloop()
+
+    def compareTest(self, archivedName, micName):
+        archivedSongData = getDataFromFile(archivedName)
+
+        micSongData = getDataFromFile(micName)
+
+        if archivedSongData is None or micSongData is None:
+            print("No files to compare")
+            return
+
+        self.songName = archivedSongData.songName
+        self.newMicSOngName = micSongData.songName
+        return compareDTW(micSongData, archivedSongData)
 
 
 
@@ -590,33 +699,18 @@ def listToString(freqList):
     return result
 
 
-def compareTest(archivedName, micName):
-    archivedSongData = getDataFromFile(archivedName)
-
-    micSongData = getDataFromFile(micName)
-
-    if archivedSongData is None or micSongData is None:
-        print("No files to compare")
-        return
-
-    compareDTW(micSongData, archivedSongData)
-
-    #micString = listToString(micSongData.getFrequencies())
-    #archivedString = listToString(archivedSongData.getFrequencies())
-    #compareStrings(micString, archivedString)
-
-
 if __name__ == "__main__":
-    oot = OutOfTune()
+    #oot = OutOfTune()
 
-    oot.read_from_mic()
+    #oot.read_from_mic()
 
     printGraph = True
 
-    #getSongData("Every Breath You Take.wav", printGraph, oot)
+    # getShortAudioClip("Viva La Vida 15", -1, 5)
 
+    # getSongData("Every Breath You Take.wav", printGraph, oot)
 
-    #compareTest("yesterday23", "yesterday23Mic")
-    #updated version
+    #dtwElements = oot.compareTest("mary", "maryMic")
 
-
+    #oot.hearClips(dtwElements)
+    # updated version

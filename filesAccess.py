@@ -1,5 +1,7 @@
 import os
+import wave
 
+import pyaudio
 
 PATH = './songsData/'
 DELIMITER = ' ; '
@@ -29,6 +31,8 @@ class FileData:
 def getSongWavPath(songName):
     return WAV_PATH + songName
 
+def getSongDataPath(songName):
+    return PATH + songName + '.txt'
 
 def printAvailableSongs():
     print("All the available songs:")
@@ -41,11 +45,25 @@ def printAvailableSongs():
 
     return dictSongs
 
+
+def printAvailableWavs():
+    print("All the available WAVs:")
+    dictSongs = dict()
+    for number, file_name in enumerate(os.listdir(WAV_PATH)):
+        if file_name.endswith('.wav'):
+            songStr = file_name[:-4]
+            print(f'{number}) {songStr}')
+            dictSongs[str(number)] = songStr
+
+    return dictSongs
+
+
+
 def checkIfFileExists(path):
     return os.path.isfile(path)
 
 def checkIfSongDataExists(songName):
-    path = PATH + songName + '.txt'
+    path = getSongDataPath(songName)
     return os.path.isfile(path)
 
 
@@ -103,3 +121,67 @@ def getDataFromFile(songName):
     fileData = FileData(songName, sampleCounter, recordingLenSeconds, duration_to_process, sampleRate, freqDict)
     return fileData
 
+
+def getShortAudioClip(songName, startingSecond, endingSecond):
+    path = getSongWavPath(songName) + ".wav"
+    if not checkIfFileExists(path):
+        print("file not found")
+        return
+    with wave.open(path, 'rb') as wav_file:
+        # Get the sample width (in bytes)
+        sample_width = wav_file.getsampwidth()
+
+        # Get the frame rate (number of frames per second)
+        frame_rate = wav_file.getframerate()
+        try:
+            # Calculate the starting and ending frames
+            starting_frame = int(startingSecond * frame_rate)
+            ending_frame = int(endingSecond * frame_rate)
+
+            # Set the file position to the starting frame
+            wav_file.setpos(starting_frame)
+
+            # Read the frames for the desired section
+            frames = wav_file.readframes(ending_frame - starting_frame)
+        except:
+            print("Seconds not valid")
+            return
+
+    # Play the extracted audio
+    p = pyaudio.PyAudio()
+    stream = p.open(format=p.get_format_from_width(sample_width),
+                    channels=wav_file.getnchannels(),
+                    rate=frame_rate,
+                    output=True)
+    stream.write(frames)
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+
+    #return frames, sample_width, frame_rate
+
+
+def removeFIle(path):
+    try:
+        os.remove(path)
+        print(f"The file '{path}' has been deleted successfully.")
+    except FileNotFoundError:
+        print(f"The file '{path}' does not exist.")
+    except PermissionError:
+        print(f"You do not have permission to delete the file '{path}'.")
+    except Exception as e:
+        print(f"An error occurred while deleting the file: {e}")
+
+
+def deleteSongWavAndData(songName):
+    nameWithWav = songName + '.wav'
+    wavPath = getSongWavPath(nameWithWav)
+    removeFIle(wavPath)
+
+    dataPath = getSongDataPath(songName)
+    removeFIle(dataPath)
+
+
+def deleteSongData(songName):
+    dataPath = getSongDataPath(songName)
+    removeFIle(dataPath)
