@@ -138,26 +138,34 @@ class OutOfTune:
         return newDict
 
     def stop_timer(self):
-        self.stream.stop_stream()
-        self.stream.close()
-        self.pa.terminate()
-        self.root.quit()
+        try:
+            self.stream.stop_stream()
+            self.stream.close()
+            self.pa.terminate()
+        except:
+            print("error")
+            self.errorOccurred = True
+        finally:
+            self.root.quit()
+            if self.recorded_frames_crepe:
+                self.save_in_wav(self.recorded_frames_crepe)
 
-        if self.recorded_frames_crepe:
-            self.save_in_wav(self.recorded_frames_crepe)
-
-        self.stop_flag = True  # Set stop flag to True to stop the microphone input loop
+            self.stop_flag = True  # Set stop flag to True to stop the microphone input loop
 
     def abortRecordingAndTimer(self):
         self.dictFromMic = {}
         self.recorded_frames_crepe = []
-
-        self.stream.stop_stream()
-        self.stream.close()
-        self.pa.terminate()
-        self.root.quit()
-        self.stop_flag = True  # Set stop flag to True to stop the microphone input loop
-        self.aborted = True
+        try:
+            self.stream.stop_stream()
+            self.stream.close()
+            self.pa.terminate()
+        except:
+            print("error")
+            self.errorOccurred = True
+        finally:
+            self.root.quit()
+            self.stop_flag = True  # Set stop flag to True to stop the microphone input loop
+            self.aborted = True
 
     # display timer in a different window
     def display_timer(self):
@@ -293,10 +301,10 @@ class OutOfTune:
             # self.rate_mic = int(fileData.sampleRate)
             # self.buffer_size = int(self.rate_mic * fileData.durationToProcess)
             self.newMicSOngName = fileData.songName + 'Mic'
-            #self.songName = fileData.songName + 'Mic'
+            self.songName = fileData.songName
             dictFromArchivedSong = fileData.notesDict
         elif type(fileData) is str:
-            #self.songName = fileData + 'Mic'
+            # self.songName = fileData + 'Mic'
             self.newMicSOngName = fileData
 
         # print("Sample Rate: ", self.rate_mic)
@@ -319,7 +327,7 @@ class OutOfTune:
             print("\n\nFirst version notes")
             self.removeDuplicatesFromDict(list(self.dictFromMic.keys()), list(self.dictFromMic.values()), False)
 
-            #record_path = getSongWavPath(self.songName) + '.wav'
+            # record_path = getSongWavPath(self.songName) + '.wav'
             record_path = getSongWavPath(self.newMicSOngName) + '.wav'
 
             # Until here we saved the recorded in a wav file, now we analyze it and save the data!
@@ -335,7 +343,8 @@ class OutOfTune:
                 # micSongName = self.songName
                 archivedSongName = self.songName
                 micSongName = self.newMicSOngName
-                self.compareTest(archivedSongName, micSongName)
+                dtwElements = self.compareTest(archivedSongName, micSongName)
+                self.hearClips(dtwElements)
 
     def trimStartOfWavFile(self, filePath):
         try:
@@ -374,7 +383,7 @@ class OutOfTune:
         return 0
 
     def save_in_wav(self, frames):
-        #file_path = getSongWavPath(self.songName) + '.wav'
+        # file_path = getSongWavPath(self.songName) + '.wav'
         file_path = getSongWavPath(self.newMicSOngName) + '.wav'
         wf = wave.open(file_path, 'wb')
         wf.setnchannels(1)
@@ -580,6 +589,11 @@ class OutOfTune:
         self.deleteCurrRecording_button = tk.Button(self.root, text="Abort", command=self.abortRecordingAndTimer)
         self.deleteCurrRecording_button.pack(expand=True)
 
+        def on_closing():
+            self.abortRecordingAndTimer()
+
+        self.root.protocol("WM_DELETE_WINDOW", on_closing)
+
     def getNameOfSongFromInput(self):
         songsDict = printAvailableSongs()
         songNumOrStr = input(
@@ -612,7 +626,6 @@ class OutOfTune:
             startingSecond, endingSecond = getClosestElementsWIthIndices(dtwElementsInfo, startingIndex,
                                                                          endingIndex, "y")
 
-
         getShortAudioClip(songName, startingSecond, endingSecond)
 
     def hearClips(self, dtwElements):
@@ -633,15 +646,14 @@ class OutOfTune:
         ending_entry = tk.Entry(window)
         ending_entry.pack()
 
-
         play_button_mic = tk.Button(window, text="Play from original",
                                     command=lambda: self.getShortAudioClipFromEntries(2, starting_entry.get(),
-                                                                                       ending_entry.get(), dtwElements))
+                                                                                      ending_entry.get(), dtwElements))
         play_button_orig = tk.Button(window, text="Play from mic",
-                                        command=lambda: self.getShortAudioClipFromEntries(1,
-                                                                                          starting_entry.get(),
-                                                                                          ending_entry.get(),
-                                                                                          dtwElements))
+                                     command=lambda: self.getShortAudioClipFromEntries(1,
+                                                                                       starting_entry.get(),
+                                                                                       ending_entry.get(),
+                                                                                       dtwElements))
         play_button_mic.pack()
         play_button_orig.pack()
 
@@ -650,7 +662,6 @@ class OutOfTune:
 
         window.protocol("WM_DELETE_WINDOW", on_closing)
         window.mainloop()
-
 
     def compareTest(self, archivedName, micName):
         archivedSongData = getDataFromFile(archivedName)
@@ -688,15 +699,10 @@ def listToString(freqList):
     return result
 
 
-
-
-
-
-
 if __name__ == "__main__":
-    oot = OutOfTune()
+    #oot = OutOfTune()
 
-    # oot.read_from_mic()
+    #oot.read_from_mic()
 
     printGraph = True
 
@@ -704,7 +710,7 @@ if __name__ == "__main__":
 
     # getSongData("Every Breath You Take.wav", printGraph, oot)
 
-    dtwElements = oot.compareTest("mary", "maryMic")
+    #dtwElements = oot.compareTest("mary", "maryMic")
 
-    oot.hearClips(dtwElements)
+    #oot.hearClips(dtwElements)
     # updated version

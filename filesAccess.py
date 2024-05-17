@@ -31,6 +31,8 @@ class FileData:
 def getSongWavPath(songName):
     return WAV_PATH + songName
 
+def getSongDataPath(songName):
+    return PATH + songName + '.txt'
 
 def printAvailableSongs():
     print("All the available songs:")
@@ -43,11 +45,25 @@ def printAvailableSongs():
 
     return dictSongs
 
+
+def printAvailableWavs():
+    print("All the available WAVs:")
+    dictSongs = dict()
+    for number, file_name in enumerate(os.listdir(WAV_PATH)):
+        if file_name.endswith('.wav'):
+            songStr = file_name[:-4]
+            print(f'{number}) {songStr}')
+            dictSongs[str(number)] = songStr
+
+    return dictSongs
+
+
+
 def checkIfFileExists(path):
     return os.path.isfile(path)
 
 def checkIfSongDataExists(songName):
-    path = PATH + songName + '.txt'
+    path = getSongDataPath(songName)
     return os.path.isfile(path)
 
 
@@ -143,3 +159,29 @@ def getShortAudioClip(songName, startingSecond, endingSecond):
     p.terminate()
 
     #return frames, sample_width, frame_rate
+
+
+def removeFIle(path):
+    try:
+        os.remove(path)
+        print(f"The file '{path}' has been deleted successfully.")
+    except FileNotFoundError:
+        print(f"The file '{path}' does not exist.")
+    except PermissionError:
+        print(f"You do not have permission to delete the file '{path}'.")
+    except Exception as e:
+        print(f"An error occurred while deleting the file: {e}")
+
+
+def deleteSongWavAndData(songName):
+    nameWithWav = songName + '.wav'
+    wavPath = getSongWavPath(nameWithWav)
+    removeFIle(wavPath)
+
+    dataPath = getSongDataPath(songName)
+    removeFIle(dataPath)
+
+
+def deleteSongData(songName):
+    dataPath = getSongDataPath(songName)
+    removeFIle(dataPath)
