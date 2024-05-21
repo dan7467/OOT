@@ -701,10 +701,10 @@ def listToString(freqList):
 
 if __name__ == "__main__":
 
-    list1 = np.array([350, 329.63, 200, 261.63, 329.63, 392.00, 350, 329.63, 200, 261.63, 329.63, 392.00, 350, 329.63, 200, 261.63, 329.63, 392.00])
-    list2 = np.array([200, 329.63, 200, 261.63, 329.63, 392.00, 350, 329.63, 200, 261.63, 329.63, 392.00, 350, 329.63, 200, 261.63, 329.63, 392.00])
-    computeScore(list1, list2)
-    #oot = OutOfTune()
+    # list1 = np.array([350, 329.63, 200, 261.63, 329.63, 392.00, 350, 329.63, 200, 261.63, 329.63, 392.00, 350, 329.63, 200, 261.63, 329.63, 392.00])
+    # list2 = np.array([200, 329.63, 200, 261.63, 329.63, 392.00, 350, 329.63, 200, 261.63, 329.63, 392.00, 350, 329.63, 200, 261.63, 329.63, 392.00])
+    # computeScore(list1, list2)
+    oot = OutOfTune()
 
     #oot.read_from_mic()
 
@@ -712,7 +712,7 @@ if __name__ == "__main__":
 
     # getShortAudioClip("Viva La Vida 15", -1, 5)
 
-    # getSongData("Every Breath You Take.wav", printGraph, oot)
+    #getSongData("king of the world.wav", printGraph, oot)
 
     #dtwElements = oot.compareTest("mary", "maryMic")
 

@@ -256,14 +256,14 @@ def computeScore(micFreqs, origFreqs):
     max_distance = np.sqrt(n) * (max_val - min_val)
 
     # Calculate similarity score
-    score = (1 - (l2_distance / max_distance)) * 100
+    score = int((1 - (l2_distance / max_distance)) * 100)
     print(f'Score: {score}')
 
 
     normalized_distance = l2_distance / max_distance
-    alpha = 4
+    alpha = 8                                               #larging the alpha will lower results more
     # Apply exponential decay to the normalized distance
-    similarity = np.exp(-alpha * normalized_distance) * 100
+    similarity = int(np.exp(-alpha * normalized_distance) * 100)
     print(f'Score normalized 2: {similarity}')
     #TODO decide which score to use!!
     return similarity
@@ -290,8 +290,8 @@ def lcssAndDTW(x, y, xTime, yTime):
     x, y, dtw_path, dtwElementsDict = removeDuplicatesFromXPath(x, y, dtw_path, xTime, yTime)
 
 
-    micFreqs = np.array([element.xFreq for element in dtwElementsDict])
-    origFreqs = np.array([element.yFreq for element in dtwElementsDict])
+    micFreqs = np.array([element.xFreq for element in dtwElementsDict.values()])
+    origFreqs = np.array([element.yFreq for element in dtwElementsDict.values()])
 
     score = computeScore(micFreqs, origFreqs)
     saveInDB(x, y, dtw_path, xTime, yTime, score)
