@@ -185,3 +185,45 @@ def deleteSongWavAndData(songName):
 def deleteSongData(songName):
     dataPath = getSongDataPath(songName)
     removeFIle(dataPath)
+
+
+#TODO DAN
+def saveInDB(x, y, dtw_path, xTime, yTime, score):
+    # x is the notes list from mic
+    # xTIme is the second list from mic
+
+    # y is the notes list from original
+    # yTIme is the second list from original
+
+    # dtw_path is the indices from each list that is matching
+    xIndices = [element[0] for element in dtw_path]
+    yIndices = [element[1] for element in dtw_path]
+
+    # I think tou can save the dtw_path complete without breaking it to x indices and y indices.
+    pass
+
+
+
+#TODO DAN
+def getPassedSongScoresFromDB(songName):
+    # get all the performances scores
+
+    return None
+
+
+#TODO DAN
+def getPassedSongDTWPath(songName, performanceId):
+    # get dtwPath from this performance and song
+
+    return None
+
+#TODO DAN
+def getPassedSongFreqsAndSeconds(songName, performanceId):
+    # return 2 lists of freqs and seconds
+    freqs = []
+    seconds = []
+
+    return freqs, seconds
+
+
+

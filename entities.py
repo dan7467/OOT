@@ -18,7 +18,7 @@ class userPerformanceDTW:
         self.performanceId = performanceId
         self.grade = grade
         self.songName = songName
-        self.performanceNotesDict = [] # a 'one-to-many' relation, instances of performanceNotesDict
+        self.performanceNotesDict = []  # a 'one-to-many' relation, instances of performanceNotesDict
 
     def add_performance(self, performanceNotesDict):
         self.performanceNotesDict.append(performanceNotesDict)
@@ -30,5 +30,13 @@ class performanceNotesDictDTW:
     def __init__(self, performanceId, songName, frequency, time):
         self.performanceId = performanceId
         self.songName = songName
-        self.frequency = frequency
-        self.time = time
+
+        # self.frequency = frequency  # TODO need to be frequencies List
+        # self.time = time            # TODO need to be Seconds List
+        #                             # TODO need to add matching indices from each notes list
+        #                             #  (original notes and mic notes) (it's the DTW path)
+        self.frequencyList = []
+        self.secondsList = []
+        self.dtwPath = []
+
+

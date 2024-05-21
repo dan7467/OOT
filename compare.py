@@ -1,17 +1,10 @@
 import math
-from difflib import SequenceMatcher
-
-import mplcursors as mplcursors
+from typing import List
 import numpy as np
-from fastdtw import fastdtw
 from matplotlib import pyplot as plt
-from dtaidistance import dtw_visualisation as dtwvis, dtw
-from dtwalign import dtw as dtwAlignFunc
-
-from filesAccess import getDataFromFile, FileData
-import scipy.spatial.distance as d
+from filesAccess import *
 from tslearn import metrics
-
+from sklearn.metrics import r2_score
 
 class dtwElementInfo:
     def __init__(self, x, y, xIndex, yIndex, xTime, yTime):
@@ -253,9 +246,29 @@ def removeDuplicatesFromXPath(x, y, dtw_path, xTime, yTime):
     return np.array(x), np.array(y), dtw_path, infoDict
 
 
+def computeScore(micFreqs, origFreqs):
+    # Calculate L2 distance
+    l2_distance = np.sqrt(np.sum((micFreqs - origFreqs) ** 2))
 
-# LCSS LOOKS GOOD  !!!! , works better than dtw
-# https://tslearn.readthedocs.io/en/stable/auto_examples/metrics/plot_lcss.html#sphx-glr-auto-examples-metrics-plot-lcss-py:~:text=Longest%20Common%20Subsequence%C2%B6
+    # Calculate maximum possible L2 distance
+    n = len(micFreqs)
+    min_val, max_val = 65, 2100  # Range of possible frequencies in Hz (C2 to C7)
+    max_distance = np.sqrt(n) * (max_val - min_val)
+
+    # Calculate similarity score
+    score = (1 - (l2_distance / max_distance)) * 100
+    print(f'Score: {score}')
+
+
+    normalized_distance = l2_distance / max_distance
+    alpha = 4
+    # Apply exponential decay to the normalized distance
+    similarity = np.exp(-alpha * normalized_distance) * 100
+    print(f'Score normalized 2: {similarity}')
+    #TODO decide which score to use!!
+    return similarity
+
+
 def lcssAndDTW(x, y, xTime, yTime):
     # Do I need to normalize it? yse a scaler like the example from the link?
 
@@ -275,6 +288,13 @@ def lcssAndDTW(x, y, xTime, yTime):
     #alignedDTWGraph(x, y, dtw_path)
 
     x, y, dtw_path, dtwElementsDict = removeDuplicatesFromXPath(x, y, dtw_path, xTime, yTime)
+
+
+    micFreqs = np.array([element.xFreq for element in dtwElementsDict])
+    origFreqs = np.array([element.yFreq for element in dtwElementsDict])
+
+    score = computeScore(micFreqs, origFreqs)
+    saveInDB(x, y, dtw_path, xTime, yTime, score)
 
     alignedDTWBarPlot(x, y, dtw_path)
 
@@ -368,4 +388,17 @@ def getClosestElementsWIthIndices(dtwElementsInfo, startingIndex, endingIndex, x
                 break
 
     return startingSec, endingSec
+
+
+
+def showGraphFromOldPerformance(songName, performanceId):
+    origData: FileData = getDataFromFile(songName)
+    oringFreqs = origData.getFrequencies()
+    origSecs = origData.getSecondsList()
+    performanceFreqs, performanceSecs = getPassedSongFreqsAndSeconds(songName, performanceId)
+    dtwPath = getPassedSongDTWPath(songName, performanceId)
+    alignedDTWBarPlot(performanceFreqs, oringFreqs, dtwPath)
+
+
+
 
