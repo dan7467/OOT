@@ -69,7 +69,7 @@ class OutOfTune:
         self.start_button = None
         self.stop_button = None
         self.deleteCurrRecording_button = None
-        self.setTimerWindowButtons()
+
 
         self.start_flag = False
         self.stop_flag = False
@@ -86,7 +86,9 @@ class OutOfTune:
         self.songName = ""
         self.newMicSOngName = ""
         self.currFileData = None
-        self.piano = self.createPiano(self.root)
+        #self.setTimerWindowButtons()
+        #self.piano = self.createPiano(self.root)
+        self.piano = None
         self.TIME_UNTIL_FIRST_NOTE_MIC = 6  # This version of the piano, the real notes from mic starts from second 6
         self.errorOccurred = False
         self.aborted = False
@@ -289,7 +291,8 @@ class OutOfTune:
             self.errorOccurred = True
 
     def read_from_mic(self):
-
+        self.setTimerWindowButtons()
+        self.piano = self.createPiano(self.root)
         fileData = self.getNameOfSongFromInput()
         self.matchingToSongBool = type(fileData) is FileData
         self.songName = "tempMic"

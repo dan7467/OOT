@@ -3,12 +3,12 @@ from filesAccess import *
 
 
 def getHistory(oot1):
-    songName = input("Enter the name of the song you want to add: ")
+    songName = input("Enter the name of the song you want to see: ")
     oot1.compareTest(songName, songName + 'Mic')
 
 
 def openMenu(oot1):
-    option = input("What do you want to do? \n1) Sing \n2) Manage Songs \n3)View history \n\nAnswer: ")
+    option = input("\nWhat do you want to do? \n1) Sing \n2) Manage Songs \n3) View history \n\nAnswer: ")
     if option == '1':
         oot1.read_from_mic()
     elif option == '2':
@@ -27,6 +27,18 @@ def printSongsWAVMenuAndReturnName():
     else:
         return dictSongs[songNum]
 
+
+def printSongsDataMenuAndReturnName():
+    dictSongs = printAvailableSongs()
+
+    songNum = input("Enter the number of the song: ")
+    if songNum not in dictSongs.keys():
+        print("Error")
+        return "-1"
+    else:
+        return dictSongs[songNum]
+
+
 def analyzeNewSong(oot1):
 
     res = printSongsWAVMenuAndReturnName()
@@ -40,13 +52,15 @@ def analyzeNewSong(oot1):
 def deleteSong(oot1, option):
     print("\n\n")
 
-    songName = printSongsWAVMenuAndReturnName()
-    if songName == "-1":
-        return
-
     if option == '1':
+        songName = printSongsDataMenuAndReturnName()
+        if songName == "-1":
+            return
         deleteSongData(songName)
     elif option == '2':
+        songName = printSongsWAVMenuAndReturnName()
+        if songName == "-1":
+            return
         deleteSongWavAndData(songName)
 
 
@@ -67,6 +81,7 @@ def manageSongs(oot1):
 
 
 if __name__ == "__main__":
-    oot = OutOfTune()
-    openMenu(oot)
+    while True:
+        oot = OutOfTune()
+        openMenu(oot)
 
