@@ -11,11 +11,19 @@ class user_application_state_DTW:
     def addUserPerformance(self, userPerformance):
         self.user_performances.append(userPerformance)
 
+    # to upload data to DB
     def to_dict(self):
         return {
             "state_id": self.state_id,
             "state_value": self.state_value
         }
+
+    # to fetch data from DB
+    def from_dict(cls, data):
+        return cls(
+            state_id=data.get("state_id"),
+            state_value=data.get("state_value")
+        )
 
 
 #
