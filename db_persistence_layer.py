@@ -7,6 +7,7 @@
 # from pymongo.mongo_client import MongoClient
 # from pymongo.server_api import ServerApi
 # from bson import ObjectId
+# import random
 
 # ------------------------------ Init connection to DB: ---------------------------------------------------------------------------------------
 
@@ -45,7 +46,7 @@ def db_add_new_song_for_existing_user(db, user_id, user_song_id):
   songs_of_user.insert_one({'_id':user_song_id, "user_performances_id_list": []})
   print('\n### CREATED: succesfuly created song', user_song_id, 'in mongoDB!')
 
-def db_add_performance_for_existing_user_and_song(db, performance_dtw_id, performance_id, song_name, times_and_freqs_dict, dtw_lst):
+def db_add_performance_for_existing_user_and_song(db, performance_dtw_id, performance_id, song_name, times_and_freqs_dict, dtw_lst, score):
   user_performances = db.user_performances
   songs_of_user = db.songs_of_user
   print('\n### UPDATING: starting update to users ...')
@@ -53,7 +54,7 @@ def db_add_performance_for_existing_user_and_song(db, performance_dtw_id, perfor
   print('\n### UPDATED: succesfuly updated ', user_id, ' with ', user_song_id,'with id:',performance_id,'in mongoDB!')
   # Dan: this object is for the user-performances-table
   print('\n### UPLOADING: starting upload to user_performances ...')
-  user_performances_dtw_assigned_ID_in_db = user_performances.insert_one({'_id': performance_id, 'song_name': song_name, "performance_notes_dict": times_and_freqs_dict, "dtw_lst": dtw_lst})
+  user_performances_dtw_assigned_ID_in_db = user_performances.insert_one({'_id': performance_id, 'song_name': song_name, "performance_notes_dict": times_and_freqs_dict, "dtw_lst": dtw_lst, "score": score})
   print('\n### CREATED: succesfuly created ', performance_dtw_id, 'in mongoDB!')
 
 def generate_random_id(length=10):
@@ -90,6 +91,15 @@ def fetch_user_performance(db, performance_id):
   print('\n### FETCHED: successfuly fetched the following - ', fetched_data)
   return fetched_data
 
+def does_user_exist(db, user_id):
+  print('\n### FETCHING: Fetching ID #', user_id, ' from table users ...')
+  fetched_data = db.users.find_one({"_id": user_id})
+  if fetched_data:
+    print('\n### FETCHED: user',user_id,'exists in db!')
+    return True
+  print('\n### DID NOT FETCH: user',user_id,"doesn't exists in db... :(")
+  return False
+
 # ------------------------------ FETCH_all Functions: ---------------------------------------------------------------------------------------
 
 def fetch_every_song_sang_by_user(db,user_id):
@@ -111,11 +121,6 @@ def fetch_every_user_performance(db, song_name, user_id):
   print('\n### FETCHED: successfuly fetched every performance for',song_name,'sang by',user_id,':\n',fetched_data)
   return fetched_data
 
-
-# ------------------------------ REMOVE Functions: ---------------------------------------------------------------------------------------
-# soon to come ...
-
-
 # ------------------------------ EXAMPLE OF USAGE: ---------------------------------------------------------------------------------------
 
 # some mock data
@@ -136,7 +141,7 @@ dtw_lst = [('a', '_a'), ('b','_b'), ('c','_c'), ('d','_d')]
 # # --- adding a song for a user (not a performance yet!):
 # db_add_new_song_for_existing_user(db, user_id, user_song_id)
 # # --- adding a performance for a song for a user:
-# db_add_performance_for_existing_user_and_song(db, user_song_id, performance_id, song_name, times_and_freqs_dict, dtw_lst)
+# db_add_performance_for_existing_user_and_song(db, user_song_id, performance_id, song_name, times_and_freqs_dict, dtw_lst, 92)
 
 # FETCHING examples (uncomment to use):
 
@@ -150,3 +155,5 @@ dtw_lst = [('a', '_a'), ('b','_b'), ('c','_c'), ('d','_d')]
 # fetch_user_performance(db, performance_id)
 # # --- fetch EVERY user_performance (for song_name, user_id):
 # fetch_every_user_performance(db, song_name, user_id)
+# # --- check if user exists:
+# does_user_exist(db, user_id)
