@@ -7,6 +7,7 @@
 # from pymongo.mongo_client import MongoClient
 # from pymongo.server_api import ServerApi
 # from bson import ObjectId
+# import random
 
 # ------------------------------ Init connection to DB: ---------------------------------------------------------------------------------------
 
@@ -90,6 +91,15 @@ def fetch_user_performance(db, performance_id):
   print('\n### FETCHED: successfuly fetched the following - ', fetched_data)
   return fetched_data
 
+def does_user_exist(db, user_id):
+  print('\n### FETCHING: Fetching ID #', user_id, ' from table users ...')
+  fetched_data = db.users.find_one({"_id": user_id})
+  if fetched_data:
+    print('\n### FETCHED: user',user_id,'exists in db!')
+    return True
+  print('\n### DID NOT FETCH: user',user_id,"doesn't exists in db... :(")
+  return False
+
 # ------------------------------ FETCH_all Functions: ---------------------------------------------------------------------------------------
 
 def fetch_every_song_sang_by_user(db,user_id):
@@ -150,3 +160,5 @@ dtw_lst = [('a', '_a'), ('b','_b'), ('c','_c'), ('d','_d')]
 # fetch_user_performance(db, performance_id)
 # # --- fetch EVERY user_performance (for song_name, user_id):
 # fetch_every_user_performance(db, song_name, user_id)
+# # --- check if user exists:
+# does_user_exist(db, user_id)
