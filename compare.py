@@ -362,11 +362,14 @@ def compareDTW(micFreq: FileData, archivedFreq: FileData):
     return lcssAndDTW(x, y, xTime, yTime)
 
 
-def compare2Songs(archivedSongName, micSongName):
-    x = None
-    y = None
-    xTime = None
-    yTime = None
+def compare2Songs(origSongAndTime, performanceFreqAndTime):
+    xTime = list(origSongAndTime.keys())
+    x = origSongAndTime.values()
+    yTime = list(performanceFreqAndTime.keys())
+    y = performanceFreqAndTime.values()
+
+    x = np.array([float(curr) for curr in x])
+    y = np.array([float(curr) for curr in y])
 
     return lcssAndDTW(x, y, xTime, yTime)
 
@@ -406,9 +409,9 @@ def showGraphFromOldPerformance(songName, performanceId):
     origData: FileData = getDataFromFile(songName)
     oringFreqs = origData.getFrequencies()
     origSecs = origData.getSecondsList()
-    performanceFreqs, performanceSecs = getPassedSongFreqsAndSeconds(songName, performanceId)
-    dtwPath = getPassedSongDTWPath(songName, performanceId)
-    alignedDTWBarPlot(performanceFreqs, oringFreqs, dtwPath)
+    # performanceFreqs, performanceSecs = getPassedSongFreqsAndSeconds(songName, performanceId)
+    # dtwPath = getPassedSongDTWPath(songName, performanceId)
+    # alignedDTWBarPlot(performanceFreqs, oringFreqs, dtwPath)
 
 
 

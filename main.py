@@ -13,8 +13,6 @@ from scipy.io import wavfile
 from scipy.signal import fftconvolve
 from numpy import argmax, diff
 import time
-import wave
-import pyaudio
 import tkinter as tk
 
 from VirtualPiano import VirtualPiano
@@ -85,11 +83,14 @@ class OutOfTune:
         # check if it should be hard coded ot dynamic
         self.songName = ""
         self.newMicSOngName = ""
+        self.origWAVName = ""
         self.currFileData = None
         self.piano = self.createPiano(self.root)
         self.TIME_UNTIL_FIRST_NOTE_MIC = 6  # This version of the piano, the real notes from mic starts from second 6
         self.errorOccurred = False
         self.aborted = False
+
+        self.dbAccess = DBAccess("Yonatan")
 
     def createPiano(self, root):
         piano = VirtualPiano(root, width=1600, height=800)  # Adjust width here
@@ -304,6 +305,7 @@ class OutOfTune:
             self.newMicSOngName = fileData.songName + generate_random_id()
 
             self.songName = fileData.songName
+            self.origWAVName = fileData.songName
             dictFromArchivedSong = fileData.notesDict
         elif type(fileData) is str:
             # self.songName = fileData + 'Mic'
@@ -339,14 +341,21 @@ class OutOfTune:
                 self.trimStartOfWavFile(record_path)
 
             if not self.errorOccurred:
-                freqsAndTime = self.read_from_wav(record_path, True)
-                add_performance_for_existing_user_and_song(freqsAndTime.keys(), freqsAndTime.values(), self.songName
-                                                           , self.newMicSOngName)
+                freqsAndTime = self.read_from_wav(record_path, True, False)
+
 
                 archivedSongName = self.songName
                 micSongName = self.newMicSOngName
-                dtwElements, score = compare2Songs(archivedSongName, micSongName)
-                add_dtw_for_performance(dtwElements, getSongID(self.songName), getSongID(self.newMicSOngName))
+
+
+                dtwElements, score = compare2Songs(self.getFreqsAndTimeFromSong(archivedSongName), freqsAndTime)
+                performanceId = micSongName[-10:]
+                songName = micSongName[:-10]
+
+                dtw_lst = list(dtwElements.keys())
+                str_dtw_lst = [(str(element[0]), str(element[1])) for element in dtw_lst]
+                self.dbAccess.add_performance_for_existing_user_and_song(freqsAndTime, songName,
+                                                                         performanceId, str_dtw_lst, score)
                 self.hearClips(dtwElements)
 
     def trimStartOfWavFile(self, filePath):
@@ -506,9 +515,9 @@ class OutOfTune:
 
         return result
 
-    def read_from_wav(self, fileName, printGraph):
+    def read_from_wav(self, fileName, printGraph, saveFile):
         try:
-            songName = fileName.split('/')[-1].split('.')[0]
+            songName = fileName.split('/')[-1].split('.')[0] + self.dbAccess.getUserIdStr()
             sr, y = wavfile.read(fileName)
 
             seconds, frequency, confidence, _ = self.runCrepePrediction(y, sr)
@@ -525,10 +534,11 @@ class OutOfTune:
             print("\n\nCrepe version notes")
             dict_filtered = self.removeDuplicatesFromDict(reliable_time, reliable_frequency, True)
 
-            fileData = FileData(songName, self.sampleCounter, 0, round(self.TIME_TO_PROCESS, 4),
+            if saveFile:
+                fileData = FileData(songName, self.sampleCounter, 0, round(self.TIME_TO_PROCESS, 4),
                                 self.rate_mic, dict_filtered)
 
-            saveToFile(fileData)  #TODO DELETE THIS WHEN DB IS READY
+                saveToFile(fileData)  #TODO DELETE THIS WHEN DB IS READY, NOT SURE!!!!!
         except:
             self.errorOccurred = True
             return None
@@ -601,7 +611,7 @@ class OutOfTune:
         self.root.protocol("WM_DELETE_WINDOW", on_closing)
 
     def getNameOfSongFromInput(self):
-        songsDict = printAvailableSongs()
+        songsDict = printAvailableSongs(self.dbAccess)
         songNumOrStr = input(
             "Write the Number of the song you want to compare to, or write new name for Not comparing: ")
         if songNumOrStr in songsDict.keys():
@@ -610,7 +620,7 @@ class OutOfTune:
             songName = songNumOrStr
         if songName.lower() == 'none' or songName == '':
             return None
-        if checkIfSongDataExists(songName):
+        if checkIfSongDataExists(songName) and self.dbAccess.checkIfSongDataExists(songName):
             fileData = getSongData(songName, False, self)
             return fileData
         else:
@@ -628,7 +638,7 @@ class OutOfTune:
             startingSecond, endingSecond = getClosestElementsWIthIndices(dtwElementsInfo, startingIndex,
                                                                          endingIndex, "x")
         else:
-            songName = self.songName
+            songName = self.origWAVName
             startingSecond, endingSecond = getClosestElementsWIthIndices(dtwElementsInfo, startingIndex,
                                                                          endingIndex, "y")
 
@@ -670,32 +680,40 @@ class OutOfTune:
         window.mainloop()
 
     def compareOldSongs(self, archivedName, micName):
-        archivedSongData = getDataFromFile(archivedName)        #TODO DELETE THIS
+        #archivedSongData = getDataFromFile(archivedName)        #TODO DELETE THIS
 
-        micSongData = getDataFromFile(micName)                  #TODO DELETE THIS
+        pass
+        #fetch from the table the dtw_path, score and present it in graph
 
+        # micSongData = getDataFromFile(micName)                  #TODO DELETE THIS
+        #
+        #
+        # if archivedSongData is None or micSongData is None:
+        #     print("No files to compare")
+        #     return
+        #
+        # self.songName = archivedSongData.songName
+        # self.newMicSOngName = micSongData.songName
+        # return compareDTW(micSongData, archivedSongData)
 
-
-
-
-        if archivedSongData is None or micSongData is None:
-            print("No files to compare")
-            return
-
-        self.songName = archivedSongData.songName
-        self.newMicSOngName = micSongData.songName
-        return compareDTW(micSongData, archivedSongData)
-
+    def getFreqsAndTimeFromSong(self, archivedSongName):
+        dataFile = getDataFromFile(archivedSongName)
+        return dataFile.notesDict
 
 
 def getSongData(file, printBool, oot1):
     songName = file.split('.')[0]
 
     # If the song hadn't been analyzed
-    if not checkIfSongDataExists(songName):
-        wavPath = getSongWavPath(file)
-        oot1.read_from_wav(wavPath, printBool)
-        add_new_song_for_existing_user(songName)
+    #if not oot1.dbAccess.checkIfSongDataExists(songName):
+    # if not checkIfSongDataExists(songName):
+    #     wavPath = getSongWavPath(file)
+    #     oot1.read_from_wav(wavPath, printBool, True)
+    #     oot1.dbAccess.addSongForUser(songName)
+
+    wavPath = getSongWavPath(file)
+    oot1.read_from_wav(wavPath, printBool, True)
+    oot1.dbAccess.addSongForUser(songName)
 
     fileData = getDataFromFile(songName)
     print("Got data from file")
