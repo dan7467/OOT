@@ -3,8 +3,17 @@ from filesAccess import *
 
 
 def getHistory(oot1):
-    songName = input("Enter the name of the song you want to add: ")
-    oot1.compareOldSongs(songName, songName + 'Mic')
+    songName = input("Enter the name of the song you want to see: ")
+    result = oot1.fetchAllPerformances(songName)
+    resultDict = {}
+    for num, performance in enumerate(result):
+        resultDict[num] = performance
+        #print(f'{num}) Score: {performance["score"]}')
+        print(f'{num}) Score: {performance["song_name"]}')
+    performanceChosenIndex = int(input("\nSelect specific Performance: "))
+
+    songName = songName.split('_')[0]
+    oot1.compareOldSongs(songName, resultDict[performanceChosenIndex])
 
 
 def openMenu(oot1):

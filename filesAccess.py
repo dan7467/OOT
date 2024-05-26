@@ -269,3 +269,8 @@ class DBAccess:
         for key, value in secondsFreqsDict.items():
             result[str(key)] = str(value)
         return result
+
+    def fetchPerformancesFromUser(self, songName):
+        result = fetch_every_user_performance(self.db, songName, self.userId)
+        result = [x for x in result if x is not None]
+        return result

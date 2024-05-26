@@ -305,7 +305,7 @@ class OutOfTune:
             self.newMicSOngName = fileData.songName + generate_random_id()
 
             self.songName = fileData.songName
-            self.origWAVName = fileData.songName
+            self.origWAVName = fileData.songName.strip('_')[0]
             dictFromArchivedSong = fileData.notesDict
         elif type(fileData) is str:
             # self.songName = fileData + 'Mic'
@@ -679,22 +679,34 @@ class OutOfTune:
         window.protocol("WM_DELETE_WINDOW", on_closing)
         window.mainloop()
 
-    def compareOldSongs(self, archivedName, micName):
-        #archivedSongData = getDataFromFile(archivedName)        #TODO DELETE THIS
 
-        pass
-        #fetch from the table the dtw_path, score and present it in graph
+    def fetchAllPerformances(self, songName):
+        return self.dbAccess.fetchPerformancesFromUser(songName)
 
-        # micSongData = getDataFromFile(micName)                  #TODO DELETE THIS
-        #
-        #
-        # if archivedSongData is None or micSongData is None:
-        #     print("No files to compare")
-        #     return
-        #
-        # self.songName = archivedSongData.songName
-        # self.newMicSOngName = micSongData.songName
-        # return compareDTW(micSongData, archivedSongData)
+    def compareOldSongs(self, archivedName, performanceObject):
+        performanceId = performanceObject["_id"]
+        performanceSongName = performanceObject["song_name"] + performanceId
+        songData = getDataFromFile(archivedName)
+
+        origFreqsAndSeconds = songData.notesDict
+        dtw_path_str = performanceObject["dtw_lst"]
+        dtw_path = [(int(x[0]), int(x[1])) for x in dtw_path_str]
+        performanceFreqsAndSeconds = performanceObject["performance_notes_dict"]
+
+        x = [float(x) for x in performanceFreqsAndSeconds.values()]
+        xTime = [float(x) for x in performanceFreqsAndSeconds.keys()]
+        y = [x for x in origFreqsAndSeconds.values()]
+        yTime = [x for x in origFreqsAndSeconds.keys()]
+
+        alignedDTWBarPlot(x, y, dtw_path)
+
+        infoDict = {}
+        for xIdx, yIdx in dtw_path:
+            infoDict[(xIdx, yIdx)] = dtwElementInfo(x[xIdx], y[yIdx], xIdx, yIdx, xTime[xIdx], yTime[yIdx])
+
+        self.hearClips(infoDict)
+
+
 
     def getFreqsAndTimeFromSong(self, archivedSongName):
         dataFile = getDataFromFile(archivedSongName)
