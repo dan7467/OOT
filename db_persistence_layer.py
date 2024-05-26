@@ -121,11 +121,6 @@ def fetch_every_user_performance(db, song_name, user_id):
   print('\n### FETCHED: successfuly fetched every performance for',song_name,'sang by',user_id,':\n',fetched_data)
   return fetched_data
 
-
-# ------------------------------ REMOVE Functions: ---------------------------------------------------------------------------------------
-# soon to come ...
-
-
 # ------------------------------ EXAMPLE OF USAGE: ---------------------------------------------------------------------------------------
 
 # some mock data
