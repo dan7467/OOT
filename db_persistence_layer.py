@@ -69,17 +69,15 @@ def db_add_performance_for_existing_user_and_song(db, performance_dtw_id, perfor
     print('\n### UPLOADING: starting upload to user_performances ...')
     user_performances_dtw_assigned_ID_in_db = user_performances.insert_one(
         {'_id': performance_id, 'song_name': song_name, "performance_notes_dict": times_and_freqs_dict,
-         "dtw_lst": dtw_lst})
+         "dtw_lst": dtw_lst, "score": score})
     print('\n### CREATED: succesfuly created ', performance_dtw_id, 'in mongoDB!')
 
-
 def generate_random_id(length=10):
-    chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    rnd_str = ''.join(random.choice(chars) for _ in range(length))
-    return rnd_str
+  chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  rnd_str = ''.join(random.choice(chars) for _ in range(length))
+  return rnd_str
 
-
-# ------------------------------ FETCH_one Functions: ----------------------------------------------------------------
+# ------------------------------ FETCH_one Functions: ---------------------------------------------------------------------------------------
 
 def fetch_user_from_db(db, user_id):
     # Dan: this object is for the users-table (which is inside the OOT_database, which is inside the OOT_Cluster, which is inside MongoDB)
@@ -110,8 +108,16 @@ def fetch_user_performance(db, performance_id):
     print('\n### FETCHED: successfuly fetched the following - ', fetched_data)
     return fetched_data
 
+def does_user_exist(db, user_id):
+  print('\n### FETCHING: Fetching ID #', user_id, ' from table users ...')
+  fetched_data = db.users.find_one({"_id": user_id})
+  if fetched_data:
+    print('\n### FETCHED: user',user_id,'exists in db!')
+    return True
+  print('\n### DID NOT FETCH: user',user_id,"doesn't exists in db... :(")
+  return False
 
-# ------------------------------ FETCH_all Functions: ----------------------------------------------------------------
+# ------------------------------ FETCH_all Functions: ---------------------------------------------------------------------------------------
 
 def fetch_every_song_sang_by_user(db, user_id):
     songs_of_user = db.songs_of_user
@@ -134,12 +140,7 @@ def fetch_every_user_performance(db, song_name, user_id):
           fetched_data)
     return fetched_data
 
-
-# ------------------------------ REMOVE Functions: -------------------------------------------------------------------
-# soon to come ...
-
-
-# ------------------------------ EXAMPLE OF USAGE: ------------------------------------------------------------------
+# ------------------------------ EXAMPLE OF USAGE: ---------------------------------------------------------------------------------------
 
 # some mock data
 # user_id = "some_user923984"
@@ -159,7 +160,7 @@ def fetch_every_user_performance(db, song_name, user_id):
 # # --- adding a song for a user (not a performance yet!):
 # db_add_new_song_for_existing_user(db, user_id, user_song_id)
 # # --- adding a performance for a song for a user:
-#db_add_performance_for_existing_user_and_song(db, user_song_id, performance_id, song_name, times_and_freqs_dict, dtw_lst)
+#db_add_performance_for_existing_user_and_song(db, user_song_id, performance_id, song_name, times_and_freqs_dict, dtw_lst, 92)
 
 # FETCHING examples (uncomment to use):
 
@@ -173,6 +174,9 @@ def fetch_every_user_performance(db, song_name, user_id):
 # fetch_user_performance(db, performance_id)
 # # --- fetch EVERY user_performance (for song_name, user_id):
 # fetch_every_user_performance(db, song_name, user_id)
+# # --- check if user exists:
+# does_user_exist(db, user_id)
+
 
 
 
