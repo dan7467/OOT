@@ -4,7 +4,7 @@ from filesAccess import *
 
 def getHistory(oot1):
     songName = input("Enter the name of the song you want to add: ")
-    oot1.compareTest(songName, songName + 'Mic')
+    oot1.compareOldSongs(songName, songName + 'Mic')
 
 
 def openMenu(oot1):

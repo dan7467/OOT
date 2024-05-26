@@ -294,11 +294,12 @@ def lcssAndDTW(x, y, xTime, yTime):
     origFreqs = np.array([element.yFreq for element in dtwElementsDict.values()])
 
     score = computeScore(micFreqs, origFreqs)
-    saveInDB(x, y, dtw_path, xTime, yTime, score)
+
+    #add_dtw_for_performance()
 
     alignedDTWBarPlot(x, y, dtw_path)
 
-    return dtwElementsDict
+    return dtwElementsDict, score
 
 
 #
@@ -359,6 +360,16 @@ def compareDTW(micFreq: FileData, archivedFreq: FileData):
     #fastDTWTest(x, y)
     #dtwvisTest(x, y)            #prints graph
     return lcssAndDTW(x, y, xTime, yTime)
+
+
+def compare2Songs(archivedSongName, micSongName):
+    x = None
+    y = None
+    xTime = None
+    yTime = None
+
+    return lcssAndDTW(x, y, xTime, yTime)
+
 
 
 def getClosestElementsWIthIndices(dtwElementsInfo, startingIndex, endingIndex, xOrY):

@@ -300,7 +300,9 @@ class OutOfTune:
             # # ensure the time between each note printed is the same as the archived version!
             # self.rate_mic = int(fileData.sampleRate)
             # self.buffer_size = int(self.rate_mic * fileData.durationToProcess)
-            self.newMicSOngName = fileData.songName + 'Mic'
+#            self.newMicSOngName = fileData.songName + 'Mic'
+            self.newMicSOngName = fileData.songName + generate_random_id()
+
             self.songName = fileData.songName
             dictFromArchivedSong = fileData.notesDict
         elif type(fileData) is str:
@@ -324,8 +326,8 @@ class OutOfTune:
             if dictFromArchivedSong is not None:
                 self.adjustMicTimesAccordingToArchive(dictFromArchivedSong, self.dictFromMic)
 
-            print("\n\nFirst version notes")
-            self.removeDuplicatesFromDict(list(self.dictFromMic.keys()), list(self.dictFromMic.values()), False)
+            #print("\n\nFirst version notes")
+            #self.removeDuplicatesFromDict(list(self.dictFromMic.keys()), list(self.dictFromMic.values()), False)
 
             # record_path = getSongWavPath(self.songName) + '.wav'
             record_path = getSongWavPath(self.newMicSOngName) + '.wav'
@@ -337,13 +339,14 @@ class OutOfTune:
                 self.trimStartOfWavFile(record_path)
 
             if not self.errorOccurred:
-                self.read_from_wav(record_path, True)
+                freqsAndTime = self.read_from_wav(record_path, True)
+                add_performance_for_existing_user_and_song(freqsAndTime.keys(), freqsAndTime.values(), self.songName
+                                                           , self.newMicSOngName)
 
-                # archivedSongName = self.songName[:-3]
-                # micSongName = self.songName
                 archivedSongName = self.songName
                 micSongName = self.newMicSOngName
-                dtwElements = self.compareTest(archivedSongName, micSongName)
+                dtwElements, score = compare2Songs(archivedSongName, micSongName)
+                add_dtw_for_performance(dtwElements, getSongID(self.songName), getSongID(self.newMicSOngName))
                 self.hearClips(dtwElements)
 
     def trimStartOfWavFile(self, filePath):
@@ -525,9 +528,12 @@ class OutOfTune:
             fileData = FileData(songName, self.sampleCounter, 0, round(self.TIME_TO_PROCESS, 4),
                                 self.rate_mic, dict_filtered)
 
-            saveToFile(fileData)
+            saveToFile(fileData)  #TODO DELETE THIS WHEN DB IS READY
         except:
             self.errorOccurred = True
+            return None
+
+        return dict_filtered
 
     # @jit(target_backend='cuda')
     def runCrepePrediction(self, y, sr):
@@ -663,10 +669,14 @@ class OutOfTune:
         window.protocol("WM_DELETE_WINDOW", on_closing)
         window.mainloop()
 
-    def compareTest(self, archivedName, micName):
-        archivedSongData = getDataFromFile(archivedName)
+    def compareOldSongs(self, archivedName, micName):
+        archivedSongData = getDataFromFile(archivedName)        #TODO DELETE THIS
 
-        micSongData = getDataFromFile(micName)
+        micSongData = getDataFromFile(micName)                  #TODO DELETE THIS
+
+
+
+
 
         if archivedSongData is None or micSongData is None:
             print("No files to compare")
@@ -685,6 +695,7 @@ def getSongData(file, printBool, oot1):
     if not checkIfSongDataExists(songName):
         wavPath = getSongWavPath(file)
         oot1.read_from_wav(wavPath, printBool)
+        add_new_song_for_existing_user(songName)
 
     fileData = getDataFromFile(songName)
     print("Got data from file")
