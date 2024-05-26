@@ -46,7 +46,7 @@ def db_add_new_song_for_existing_user(db, user_id, user_song_id):
   songs_of_user.insert_one({'_id':user_song_id, "user_performances_id_list": []})
   print('\n### CREATED: succesfuly created song', user_song_id, 'in mongoDB!')
 
-def db_add_performance_for_existing_user_and_song(db, performance_dtw_id, performance_id, song_name, times_and_freqs_dict, dtw_lst):
+def db_add_performance_for_existing_user_and_song(db, performance_dtw_id, performance_id, song_name, times_and_freqs_dict, dtw_lst, score):
   user_performances = db.user_performances
   songs_of_user = db.songs_of_user
   print('\n### UPDATING: starting update to users ...')
@@ -54,7 +54,7 @@ def db_add_performance_for_existing_user_and_song(db, performance_dtw_id, perfor
   print('\n### UPDATED: succesfuly updated ', user_id, ' with ', user_song_id,'with id:',performance_id,'in mongoDB!')
   # Dan: this object is for the user-performances-table
   print('\n### UPLOADING: starting upload to user_performances ...')
-  user_performances_dtw_assigned_ID_in_db = user_performances.insert_one({'_id': performance_id, 'song_name': song_name, "performance_notes_dict": times_and_freqs_dict, "dtw_lst": dtw_lst})
+  user_performances_dtw_assigned_ID_in_db = user_performances.insert_one({'_id': performance_id, 'song_name': song_name, "performance_notes_dict": times_and_freqs_dict, "dtw_lst": dtw_lst, "score": score})
   print('\n### CREATED: succesfuly created ', performance_dtw_id, 'in mongoDB!')
 
 def generate_random_id(length=10):
