@@ -141,7 +141,7 @@ dtw_lst = [('a', '_a'), ('b','_b'), ('c','_c'), ('d','_d')]
 # # --- adding a song for a user (not a performance yet!):
 # db_add_new_song_for_existing_user(db, user_id, user_song_id)
 # # --- adding a performance for a song for a user:
-# db_add_performance_for_existing_user_and_song(db, user_song_id, performance_id, song_name, times_and_freqs_dict, dtw_lst)
+# db_add_performance_for_existing_user_and_song(db, user_song_id, performance_id, song_name, times_and_freqs_dict, dtw_lst, 92)
 
 # FETCHING examples (uncomment to use):
 
