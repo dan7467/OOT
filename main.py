@@ -519,9 +519,7 @@ class OutOfTune:
         try:
             songName = fileName.split('/')[-1].split('.')[0]
             sr, y = wavfile.read(fileName)
-            print("Got here 1")
             seconds, frequency, confidence, _ = self.runCrepePrediction(y, sr)
-            print("Got here 2")
             # Filter out frequencies with confidence below 0.5
             reliable_indices = confidence >= self.CONFIDENCE_LEVEL
             reliable_confidence = confidence[reliable_indices]
