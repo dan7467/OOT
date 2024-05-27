@@ -342,7 +342,7 @@ class OutOfTune:
 
             if not self.errorOccurred:
                 freqsAndTime = self.read_from_wav(record_path, True, False)
-
+                print(f'freq and time: {freqsAndTime}')
 
                 archivedSongName = self.songName
                 micSongName = self.newMicSOngName
@@ -519,37 +519,36 @@ class OutOfTune:
         try:
             songName = fileName.split('/')[-1].split('.')[0]
             sr, y = wavfile.read(fileName)
-
+            print("Got here 1")
             seconds, frequency, confidence, _ = self.runCrepePrediction(y, sr)
-
+            print("Got here 2")
             # Filter out frequencies with confidence below 0.5
             reliable_indices = confidence >= self.CONFIDENCE_LEVEL
             reliable_confidence = confidence[reliable_indices]
             reliable_time = seconds[reliable_indices]
             reliable_frequency = frequency[reliable_indices]
-
             if printGraph:
                 self.plotGraphWav(reliable_time, reliable_frequency, reliable_confidence)
-
             print("\n\nCrepe version notes")
             dict_filtered = self.removeDuplicatesFromDict(reliable_time, reliable_frequency, True)
-
             if saveFile:
                 fileData = FileData(songName, self.sampleCounter, 0, round(self.TIME_TO_PROCESS, 4),
                                 self.rate_mic, dict_filtered)
-
                 saveToFile(fileData)  #TODO DELETE THIS WHEN DB IS READY, NOT SURE!!!!!
         except:
             self.errorOccurred = True
+            print("error in read_wav")
             return None
-
         return dict_filtered
+
+
+
 
     # @jit(target_backend='cuda')
     def runCrepePrediction(self, y, sr):
         # Call crepe to estimate pitch and confidence
         # , viterbi=True, step_size=10
-        return crepe.predict(y, sr, model_capacity='large', step_size=self.CREPE_STEP_SIZE)
+        return crepe.predict(y, sr, model_capacity='large', step_size=self.CREPE_STEP_SIZE, verbose=0)
 
     def plotGraphWav(self, seconds, freq, confidence):
 
