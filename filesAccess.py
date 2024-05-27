@@ -48,9 +48,9 @@ def printAvailableSongs(db):
     dictSongs = dict()
     filesInFolder = [name[:-4] for name in os.listdir(PATH) if name.endswith('.txt')]
     filesInDb = db.getSongsNameList()
-    resultList = list(set(filesInFolder) & set(filesInDb))
+    #resultList = list(set(filesInFolder) & set(filesInDb))
     #for number, file_name in enumerate(os.listdir(PATH)):
-    for number, file_name in enumerate(resultList):
+    for number, file_name in enumerate(filesInDb):
 
         songStr = file_name
         print(f'{number}) {songStr}')
@@ -210,11 +210,13 @@ class DBAccess:
 
     def addSongForUser(self, songName):
         try:
-            db_add_new_song_for_existing_user(self.db, self.userId, songName + '_' + self.userId)
+            db_add_new_song_for_existing_user(self.db, self.userId, songName)
         except:
             print("Already in db")
+
     def fetchSongsFromUser(self):
-        return fetch_user_from_db(self.db, self.userId)
+        return fetch_every_song_sang_by_user(self.db, self.userId)
+        #return fetch_user_from_db(self.db, self.userId)
 
 
     def checkIfSongDataExists(self, songName):
@@ -229,9 +231,9 @@ class DBAccess:
 
     def add_performance_for_existing_user_and_song(self, secondsFreqsDict, songName, performanceId, dtw_lst, score):
 
-        perfromance_dtw_id = songName + self.getUserIdStr()
+        performance_dtw_id = songName
         freqsAndTimeStr = self.convertDictToStr(secondsFreqsDict)
-        db_add_performance_for_existing_user_and_song(self.db, perfromance_dtw_id, performanceId, songName,
+        db_add_performance_for_existing_user_and_song(self.db, performance_dtw_id, performanceId, songName,
                                                       freqsAndTimeStr, dtw_lst, score)
 
 

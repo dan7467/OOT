@@ -1,18 +1,24 @@
-from main import OutOfTune, getSongData
+from main import OutOfTune
 from filesAccess import *
 
 
 def getHistory(oot1):
-    songName = input("Enter the name of the song you want to see: ")
+    allSongs = oot1.fetchAllSongsForUser()
+    songsDict = {}
+    for num, song in enumerate(allSongs):
+        songsDict[num] = song
+        print(f'{num}) {songsDict[num]["_id"]}')
+
+    songNum = int(input("Enter the number of the song you want to see: "))
+    songName = songsDict[songNum]["_id"].split('_')[0]
     result = oot1.fetchAllPerformances(songName)
     resultDict = {}
     for num, performance in enumerate(result):
         resultDict[num] = performance
-        #print(f'{num}) Score: {performance["score"]}')
-        print(f'{num}) Score: {performance["song_name"]}')
+        print(f'{num}){songName}, Score: {performance["score"]}')
+        #print(f'{num}) Score: {performance["song_name"]}')
     performanceChosenIndex = int(input("\nSelect specific Performance: "))
 
-    songName = songName.split('_')[0]
     oot1.compareOldSongs(songName, resultDict[performanceChosenIndex])
 
 
@@ -43,7 +49,7 @@ def analyzeNewSong(oot1):
         return
 
     nameWithWav = res + '.wav'
-    getSongData(nameWithWav, True, oot1)
+    oot1.getSongData(nameWithWav, True, oot1)
 
 
 def deleteSong(oot1, option):

@@ -302,10 +302,10 @@ class OutOfTune:
             # self.rate_mic = int(fileData.sampleRate)
             # self.buffer_size = int(self.rate_mic * fileData.durationToProcess)
 #            self.newMicSOngName = fileData.songName + 'Mic'
-            self.newMicSOngName = fileData.songName + generate_random_id()
+            self.newMicSOngName = fileData.songName + self.dbAccess.getUserIdStr() + generate_random_id()
 
             self.songName = fileData.songName
-            self.origWAVName = fileData.songName.strip('_')[0]
+            self.origWAVName = self.newMicSOngName.split('_')[0]
             dictFromArchivedSong = fileData.notesDict
         elif type(fileData) is str:
             # self.songName = fileData + 'Mic'
@@ -350,11 +350,11 @@ class OutOfTune:
 
                 dtwElements, score = compare2Songs(self.getFreqsAndTimeFromSong(archivedSongName), freqsAndTime)
                 performanceId = micSongName[-10:]
-                songName = micSongName[:-10]
+                songNameWithUserName = micSongName[:-10]
 
                 dtw_lst = list(dtwElements.keys())
                 str_dtw_lst = [(str(element[0]), str(element[1])) for element in dtw_lst]
-                self.dbAccess.add_performance_for_existing_user_and_song(freqsAndTime, songName,
+                self.dbAccess.add_performance_for_existing_user_and_song(freqsAndTime, songNameWithUserName,
                                                                          performanceId, str_dtw_lst, score)
                 self.hearClips(dtwElements)
 
@@ -517,7 +517,7 @@ class OutOfTune:
 
     def read_from_wav(self, fileName, printGraph, saveFile):
         try:
-            songName = fileName.split('/')[-1].split('.')[0] + self.dbAccess.getUserIdStr()
+            songName = fileName.split('/')[-1].split('.')[0]
             sr, y = wavfile.read(fileName)
 
             seconds, frequency, confidence, _ = self.runCrepePrediction(y, sr)
@@ -618,10 +618,11 @@ class OutOfTune:
             songName = songsDict[songNumOrStr]
         else:
             songName = songNumOrStr
-        if songName.lower() == 'none' or songName == '':
+        songNameWithoutUserName = songName.split('_')[0]
+        if songName.lower() == 'none' or songNameWithoutUserName == '':
             return None
-        if checkIfSongDataExists(songName) and self.dbAccess.checkIfSongDataExists(songName):
-            fileData = getSongData(songName, False, self)
+        if checkIfSongDataExists(songNameWithoutUserName) and self.dbAccess.checkIfSongDataExists(songName):
+            fileData = getDataFromFile(songNameWithoutUserName)
             return fileData
         else:
             print("Song does not exists!")
@@ -683,6 +684,9 @@ class OutOfTune:
     def fetchAllPerformances(self, songName):
         return self.dbAccess.fetchPerformancesFromUser(songName)
 
+    def fetchAllSongsForUser(self):
+        return self.dbAccess.fetchSongsFromUser()
+
     def compareOldSongs(self, archivedName, performanceObject):
         performanceId = performanceObject["_id"]
         performanceSongName = performanceObject["song_name"] + performanceId
@@ -693,11 +697,13 @@ class OutOfTune:
         dtw_path = [(int(x[0]), int(x[1])) for x in dtw_path_str]
         performanceFreqsAndSeconds = performanceObject["performance_notes_dict"]
 
-        x = [float(x) for x in performanceFreqsAndSeconds.values()]
-        xTime = [float(x) for x in performanceFreqsAndSeconds.keys()]
-        y = [x for x in origFreqsAndSeconds.values()]
-        yTime = [x for x in origFreqsAndSeconds.keys()]
+        y = np.array([float(x) for x in performanceFreqsAndSeconds.values()])
+        yTime = [float(x) for x in performanceFreqsAndSeconds.keys()]
+        x = np.array([x for x in origFreqsAndSeconds.values()])
+        xTime = [x for x in origFreqsAndSeconds.keys()]
 
+        self.origWAVName = archivedName
+        self.newMicSOngName = performanceSongName
         alignedDTWBarPlot(x, y, dtw_path)
 
         infoDict = {}
@@ -713,23 +719,23 @@ class OutOfTune:
         return dataFile.notesDict
 
 
-def getSongData(file, printBool, oot1):
-    songName = file.split('.')[0]
+    def getSongData(self, file, printBool, oot1):
+        songName = file.split('.')[0]
 
-    # If the song hadn't been analyzed
-    #if not oot1.dbAccess.checkIfSongDataExists(songName):
-    # if not checkIfSongDataExists(songName):
-    #     wavPath = getSongWavPath(file)
-    #     oot1.read_from_wav(wavPath, printBool, True)
-    #     oot1.dbAccess.addSongForUser(songName)
+        # If the song hadn't been analyzed
+        #if not oot1.dbAccess.checkIfSongDataExists(songName):
+        # if not checkIfSongDataExists(songName):
+        #     wavPath = getSongWavPath(file)
+        #     oot1.read_from_wav(wavPath, printBool, True)
+        #     oot1.dbAccess.addSongForUser(songName)
 
-    wavPath = getSongWavPath(file)
-    oot1.read_from_wav(wavPath, printBool, True)
-    oot1.dbAccess.addSongForUser(songName)
+        wavPath = getSongWavPath(file)
+        oot1.read_from_wav(wavPath, printBool, True)
+        oot1.dbAccess.addSongForUser(songName + self.dbAccess.getUserIdStr())
 
-    fileData = getDataFromFile(songName)
-    print("Got data from file")
-    return fileData
+        fileData = getDataFromFile(songName)
+        print("Got data from file")
+        return fileData
 
 
 def listToString(freqList):

@@ -103,9 +103,9 @@ def fetch_user_performance(db, performance_id):
     # Dan: this object is for the user-performances-table (which is inside the OOT_database, which is inside the OOT_Cluster, which is inside MongoDB)
     user_performances = db.user_performances
     # Dan: here we fetch a user_performance from the 'user_performances' collection
-    print('\n### FETCHING: Fetching ID #', performance_id, ' from  table user_performances ...')
+    #print('\n### FETCHING: Fetching ID #', performance_id, ' from  table user_performances ...')
     fetched_data = user_performances.find_one({"_id": performance_id})
-    print('\n### FETCHED: successfuly fetched the following - ', fetched_data)
+    #print('\n### FETCHED: successfuly fetched the following - ', fetched_data)
     return fetched_data
 
 def does_user_exist(db, user_id):
@@ -121,9 +121,9 @@ def does_user_exist(db, user_id):
 
 def fetch_every_song_sang_by_user(db, user_id):
     songs_of_user = db.songs_of_user
-    print('\n### FETCHING: Fetching every song sang by', user_id, '...')
+    #print('\n### FETCHING: Fetching every song sang by', user_id, '...')
     fetched_data = list(songs_of_user.find({"_id": {"$regex": '_' + user_id}}))
-    print('\n### FETCHED: successfuly fetched every song which was sang by', user_id, ':\n', fetched_data)
+    #print('\n### FETCHED: successfuly fetched every song which was sang by', user_id, ':\n', fetched_data)
     return fetched_data
 
 
@@ -133,11 +133,11 @@ def fetch_every_user_performance(db, song_name, user_id):
     songs_of_user = fetch_song_of_user(db, fetch_id)
     performances_ids = songs_of_user['user_performances_id_list']
     fetched_data = []
-    print('\n### FETCHING: Fetching every performance of', song_name, 'sang by', user_id, '...')
+    #print('\n### FETCHING: Fetching every performance of', song_name, 'sang by', user_id, '...')
     for performance_id in performances_ids:
         fetched_data.append(user_performances.find_one({"_id": performance_id}))
-    print('\n### FETCHED: successfuly fetched every performance for', song_name, 'sang by', user_id, ':\n',
-          fetched_data)
+    #print('\n### FETCHED: successfuly fetched every performance for', song_name, 'sang by', user_id, ':\n',
+    #      fetched_data)
     return fetched_data
 
 # ------------------------------ EXAMPLE OF USAGE: ---------------------------------------------------------------------------------------
