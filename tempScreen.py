@@ -9,18 +9,20 @@ def getHistory(oot1):
         songsDict[num] = song
         print(f'{num}) {songsDict[num]["_id"]}')
 
-    songNum = int(input("Enter the number of the song you want to see: "))
-    songName = songsDict[songNum]["_id"].split('_')[0]
-    result = oot1.fetchAllPerformances(songName)
-    resultDict = {}
-    for num, performance in enumerate(result):
-        resultDict[num] = performance
-        print(f'{num}){songName}, Score: {performance["score"]}')
-        #print(f'{num}) Score: {performance["song_name"]}')
-    performanceChosenIndex = int(input("\nSelect specific Performance: "))
+    try:
+        songNum = int(input("Enter the number of the song you want to see: "))
+        songName = songsDict[songNum]["_id"].split('_')[0]
+        result = oot1.fetchAllPerformances(songName)
+        resultDict = {}
+        for num, performance in enumerate(result):
+            resultDict[num] = performance
+            print(f'{num}){songName}, Score: {performance["score"]}')
+            #print(f'{num}) Score: {performance["song_name"]}')
+        performanceChosenIndex = int(input("\nSelect specific Performance: "))
 
-    oot1.compareOldSongs(songName, resultDict[performanceChosenIndex])
-
+        oot1.compareOldSongs(songName, resultDict[performanceChosenIndex])
+    except:
+        print("error")
 
 def openMenu(oot1):
     option = input("What do you want to do? \n1) Sing \n2) Manage Songs \n3)View history \n\nAnswer: ")
@@ -72,9 +74,11 @@ def manageSongs(oot1):
                    "3) Add data from recording \n\n"
                    "Answer: ")
     if option == '1':
-        deleteSong(oot1, '1')
+        pass
+        #deleteSong(oot1, '1')
     elif option == '2':
-        deleteSong(oot1, '2')
+        #deleteSong(oot1, '2')
+        pass
     elif option == '3':
         analyzeNewSong(oot1)
 

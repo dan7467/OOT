@@ -83,9 +83,9 @@ def fetch_user_from_db(db, user_id):
     # Dan: this object is for the users-table (which is inside the OOT_database, which is inside the OOT_Cluster, which is inside MongoDB)
     users = db.users
     # Dan: here we fetch a user from the 'users' collection
-    print('\n### FETCHING: Fetching ID #', user_id, ' from table users ...')
+    #print('\n### FETCHING: Fetching ID #', user_id, ' from table users ...')
     fetched_data = users.find_one({"_id": user_id})
-    print('\n### FETCHED: successfuly fetched the following - ', fetched_data)
+    #print('\n### FETCHED: successfuly fetched the following - ', fetched_data)
     return fetched_data
 
 
@@ -93,9 +93,9 @@ def fetch_song_of_user(db, user_song_id):
     # Dan: this object is for the songs_of_user-table
     songs_of_user = db.songs_of_user
     # Dan: here we fetch a user_performance from the 'user_performances' collection
-    print('\n### FETCHING: Fetching', user_song_id, 'from  table songs_of_user ...')
+    #print('\n### FETCHING: Fetching', user_song_id, 'from  table songs_of_user ...')
     fetched_data = songs_of_user.find_one({"_id": user_song_id})
-    print('\n### FETCHED: successfuly fetched the following - ', fetched_data)
+    #print('\n### FETCHED: successfuly fetched the following - ', fetched_data)
     return fetched_data
 
 
@@ -109,12 +109,12 @@ def fetch_user_performance(db, performance_id):
     return fetched_data
 
 def does_user_exist(db, user_id):
-  print('\n### FETCHING: Fetching ID #', user_id, ' from table users ...')
+  #print('\n### FETCHING: Fetching ID #', user_id, ' from table users ...')
   fetched_data = db.users.find_one({"_id": user_id})
   if fetched_data:
-    print('\n### FETCHED: user',user_id,'exists in db!')
+    #print('\n### FETCHED: user',user_id,'exists in db!')
     return True
-  print('\n### DID NOT FETCH: user',user_id,"doesn't exists in db... :(")
+  #print('\n### DID NOT FETCH: user',user_id,"doesn't exists in db... :(")
   return False
 
 # ------------------------------ FETCH_all Functions: ---------------------------------------------------------------------------------------

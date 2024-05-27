@@ -90,7 +90,7 @@ class OutOfTune:
         self.errorOccurred = False
         self.aborted = False
 
-        self.dbAccess = DBAccess("Yonatan")
+        self.dbAccess = DBAccess("Roni")
 
     def createPiano(self, root):
         piano = VirtualPiano(root, width=1600, height=800)  # Adjust width here
