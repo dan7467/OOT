@@ -2,6 +2,8 @@ import math
 from typing import List
 import numpy as np
 from matplotlib import pyplot as plt
+import tkinter as tk
+
 from filesAccess import *
 from tslearn import metrics
 from sklearn.metrics import r2_score
@@ -15,7 +17,71 @@ class dtwElementInfo:
         self.xTime = xTime
         self.yTime = yTime
 
+class ComparedSongs:
+    def __init__(self, songName, performanceName, grade, dtwElements, x, y, dtw_path):
+        self.songName = songName
+        self.performanceName = performanceName
+        self.score = grade
+        self.dtwElements = dtwElements
+        self.x = x
+        self.y = y
+        self.dtw_path = dtw_path
 
+
+    def showBarGraph(self):
+        alignedDTWBarPlot(self.x, self.y, self.dtw_path)
+
+
+
+    def hearClips(self):
+        window = tk.Tk()
+
+        # file_label = tk.Label(window, text="File Name:")
+        # file_label.pack()
+        # file_name_entry = tk.Entry(window)
+        # file_name_entry.pack()
+
+        starting_label = tk.Label(window, text="Starting Second:")
+        starting_label.pack()
+        starting_entry = tk.Entry(window)
+        starting_entry.pack()
+
+        ending_label = tk.Label(window, text="Ending Second:")
+        ending_label.pack()
+        ending_entry = tk.Entry(window)
+        ending_entry.pack()
+
+        play_button_mic = tk.Button(window, text="Play from original",
+                                    command=lambda: self.getShortAudioClipFromEntries(2, starting_entry.get(),
+                                                                                      ending_entry.get(), self.dtwElements))
+        play_button_orig = tk.Button(window, text="Play from mic",
+                                     command=lambda: self.getShortAudioClipFromEntries(1,
+                                                                                       starting_entry.get(),
+                                                                                       ending_entry.get(),
+                                                                                       self.dtwElements))
+        play_button_mic.pack()
+        play_button_orig.pack()
+
+        def on_closing():
+            window.destroy()
+
+        window.protocol("WM_DELETE_WINDOW", on_closing)
+        window.mainloop()
+
+
+    def getShortAudioClipFromEntries(self, name, startingIndex, endingIndex, dtwElementsInfo):
+        startingIndex = int(startingIndex)
+        endingIndex = int(endingIndex)
+        if name == 1:
+            songName = self.performanceName
+            startingSecond, endingSecond = getClosestElementsWIthIndices(dtwElementsInfo, startingIndex,
+                                                                         endingIndex, "x")
+        else:
+            songName = self.songName
+            startingSecond, endingSecond = getClosestElementsWIthIndices(dtwElementsInfo, startingIndex,
+                                                                         endingIndex, "y")
+
+        getShortAudioClip(songName, startingSecond, endingSecond)
 
 
 
@@ -269,7 +335,7 @@ def computeScore(micFreqs, origFreqs):
     return similarity
 
 
-def lcssAndDTW(x, y, xTime, yTime):
+def lcssAndDTW(x, y, xTime, yTime, songName, newMicSOngName):
     # Do I need to normalize it? yse a scaler like the example from the link?
 
     # Calculate DTW path and similarity
@@ -297,10 +363,12 @@ def lcssAndDTW(x, y, xTime, yTime):
 
     #add_dtw_for_performance()
 
-    alignedDTWBarPlot(x, y, dtw_path)
+    #WITH THIS WE CAN SEE THE GRAPH
+    #alignedDTWBarPlot(x, y, dtw_path)
 
-    return dtwElementsDict, score
-
+    comparedSongs = ComparedSongs(songName, newMicSOngName, score, dtwElementsDict, x, y, dtw_path)
+    # return dtwElementsDict, score
+    return comparedSongs
 
 #
 # def lcssPlot(x, y, xTime, yTime):
@@ -346,23 +414,23 @@ def lcssAndDTW(x, y, xTime, yTime):
 
 
 
-def compareDTW(micFreq: FileData, archivedFreq: FileData):
-    # I can try different distances (cosine, euclidean, norm1...)
+# def compareDTW(micFreq: FileData, archivedFreq: FileData):
+#     # I can try different distances (cosine, euclidean, norm1...)
+#
+#     x = micFreq.getFrequencies()
+#     xTime = micFreq.getSecondsList()
+#     y = archivedFreq.getFrequencies()
+#     yTime = archivedFreq.getSecondsList()
+#
+#     x = np.array([float(curr) for curr in x])
+#     y = np.array([float(curr) for curr in y])
+#
+#     #fastDTWTest(x, y)
+#     #dtwvisTest(x, y)            #prints graph
+#     return lcssAndDTW(x, y, xTime, yTime)
 
-    x = micFreq.getFrequencies()
-    xTime = micFreq.getSecondsList()
-    y = archivedFreq.getFrequencies()
-    yTime = archivedFreq.getSecondsList()
 
-    x = np.array([float(curr) for curr in x])
-    y = np.array([float(curr) for curr in y])
-
-    #fastDTWTest(x, y)
-    #dtwvisTest(x, y)            #prints graph
-    return lcssAndDTW(x, y, xTime, yTime)
-
-
-def compare2Songs(origSongAndTime, performanceFreqAndTime):
+def compare2Songs(origSongAndTime, performanceFreqAndTime,  songName, newMicSOngName):
     xTime = list(origSongAndTime.keys())
     x = origSongAndTime.values()
     yTime = list(performanceFreqAndTime.keys())
@@ -371,7 +439,7 @@ def compare2Songs(origSongAndTime, performanceFreqAndTime):
     x = np.array([float(curr) for curr in x])
     y = np.array([float(curr) for curr in y])
 
-    return lcssAndDTW(x, y, xTime, yTime)
+    return lcssAndDTW(x, y, xTime, yTime, songName, newMicSOngName)
 
 
 

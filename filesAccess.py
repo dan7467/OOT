@@ -8,10 +8,10 @@ import pyaudio
 
 from db_persistence_layer import *
 
-PATH = './songsData/'
+PATH = '../songsData/'
 DELIMITER = ' ; '
 DICT_DELIMITER = '-'
-WAV_PATH = './songsWav/'
+WAV_PATH = '../songsWav/'
 # SAMPLE_COUNTER_INDEX = 0
 # RECORDING_LEN_SECONDS_INDEX = 1
 # DURATION_TO_PROCESS_INDEX = 2
