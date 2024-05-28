@@ -358,6 +358,7 @@ class OutOfTune:
                 self.dbAccess.add_performance_for_existing_user_and_song(freqsAndTime, songNameWithUserName,
                                                                          performanceId, str_dtw_lst, self.comparedSongs.score)
                 #self.hearClips()
+                return self.comparedSongs
 
     def trimStartOfWavFile(self, filePath):
         try:

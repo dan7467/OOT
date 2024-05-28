@@ -79,10 +79,10 @@ class MainContent(tk.Frame):
 
     def startMic(self, songName):
         self.oot = OutOfTune()
-        self.oot.read_from_mic(songName)
+        self.comparedSongsObject = self.oot.read_from_mic(songName)
         print(self.getGrade())
 
-        #self.printGraph()
+        self.printGraph()
 
 
     def getGrade(self):
@@ -112,8 +112,7 @@ class MainContent(tk.Frame):
         self.compareOldSongsInFront(songNameWithoutUserName, resultDict[performanceChosenIndex])
 
         self.printGraph()
-        self.oot.hearClips()
-        pass
+        #self.oot.hearClips()
 
 
 
