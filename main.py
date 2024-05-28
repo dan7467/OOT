@@ -533,9 +533,11 @@ class OutOfTune:
                 fileData = FileData(songName, self.sampleCounter, 0, round(self.TIME_TO_PROCESS, 4),
                                 self.rate_mic, dict_filtered)
                 saveToFile(fileData)  #TODO DELETE THIS WHEN DB IS READY, NOT SURE!!!!!
-        except:
+
+        except Exception as error:
+            # handle the exception
+            print("An exception occurred in read_wav:", error)  # An exception occurred: division by zero
             self.errorOccurred = True
-            print("error in read_wav")
             return None
         return dict_filtered
 
@@ -546,6 +548,7 @@ class OutOfTune:
     def runCrepePrediction(self, y, sr):
         # Call crepe to estimate pitch and confidence
         # , viterbi=True, step_size=10
+        print("Starting crepe")
         return crepe.predict(y, sr, model_capacity='large', step_size=self.CREPE_STEP_SIZE, verbose=0)
 
     def plotGraphWav(self, seconds, freq, confidence):
