@@ -8,10 +8,12 @@ import pyaudio
 
 from db_persistence_layer import *
 
-PATH = '../songsData/'
+PATH = '../songsData/'    #TODO WHen running from MainContent
+WAV_PATH = '../songsWav/' #TODO WHen running from MainContent
+#PATH = './songsData/'       #TODO WHen running from tempScreen
+#WAV_PATH = './songsWav/'    #TODO WHen running from tempScreen
 DELIMITER = ' ; '
 DICT_DELIMITER = '-'
-WAV_PATH = '../songsWav/'
 # SAMPLE_COUNTER_INDEX = 0
 # RECORDING_LEN_SECONDS_INDEX = 1
 # DURATION_TO_PROCESS_INDEX = 2
@@ -186,12 +188,15 @@ def removeFIle(path):
 
 
 def deleteSongWavAndData(songName):
-    nameWithWav = songName + '.wav'
-    wavPath = getSongWavPath(nameWithWav)
-    removeFIle(wavPath)
+    deleteSongWav(songName)
 
     dataPath = getSongDataPath(songName)
     removeFIle(dataPath)
+
+def deleteSongWav(songName):
+    nameWithWav = songName + '.wav'
+    wavPath = getSongWavPath(nameWithWav)
+    removeFIle(wavPath)
 
 
 def deleteSongData(songName):
@@ -237,32 +242,6 @@ class DBAccess:
                                                       freqsAndTimeStr, dtw_lst, score)
 
 
-    def add_new_song_for_existing_user(self, songName):
-        pass
-
-    # TODO DAN
-    def getPassedSongScoresFromDB(self, songName):
-        # get all the performances scores
-
-        return None
-
-    # TODO DAN
-    def getPassedSongDTWPath(self, songName, performanceId):
-        # get dtwPath from this performance and song
-
-        return None
-
-    # TODO DAN
-    def getPassedSongFreqsAndSeconds(self, songName, performanceId):
-        # return 2 lists of freqs and seconds
-        freqs = []
-        seconds = []
-
-        return freqs, seconds
-
-    def getSongID(self, songName):
-        return 1
-
     def getUserIdStr(self):
         return '_' + self.userId
 
@@ -276,3 +255,41 @@ class DBAccess:
         result = fetch_every_user_performance(self.db, songName, self.userId)
         result = [x for x in result if x is not None]
         return result
+
+    def deletePerformance(self, performanceId, songName):
+        db_remove_performance(self.db, performanceId)
+        songName = songName + self.getUserIdStr()
+        self.removePerformanceLocal(performanceId, songName)
+
+    def deleteSongAndPerformances(self, songName):
+        songName = songName + self.getUserIdStr()
+        self.removeFromLocal(songName)
+
+        db_deep_remove_song_of_user(self.db, songName, self.userId)
+
+
+    def removeFromLocal(self, songName):
+        performancesIds = self.getPerformanceIdsOfSong(songName)
+        for performanceId in performancesIds:
+            self.removePerformanceLocal(performanceId, songName)
+
+        #deleteSongWavAndData(songName) #I don't think its necessary
+
+    def deleteUser(self):
+
+        songList = self.getSongsNameList()
+        for songName in songList:
+            self.removeFromLocal(songName)
+
+        db_deep_remove_user(self.db, self.userId)
+
+
+    def getPerformanceIdsOfSong(self, songName):
+        songs_of_user = fetch_song_of_user(self.db, songName)
+        if songs_of_user is not None and len(songs_of_user['user_performances_id_list']) > 0:
+            return songs_of_user['user_performances_id_list']
+        return []
+
+    def removePerformanceLocal(self, performanceId, songName):
+        wavSongName = songName + str(performanceId)
+        deleteSongWav(wavSongName)
