@@ -149,9 +149,12 @@ def fetch_every_user_performance(db, song_name, user_id):
 # ------------------------------ REMOVE Functions: ---------------------------------------------------------------------------------------
 
 
-def db_remove_performance(db, performance_id):
+def db_remove_performance(db, performance_id, song_of_user_id):
     res = db.user_performances.delete_many({"_id": performance_id})
     print(f"\n### REMOVED performance {performance_id}!")
+    # remove performance_id from performance_ids (in songs_of_user table):
+    db.songs_of_user.update_one({'_id':song_of_user_id} ,{"$pull" : {"user_performances_id_list": performance_id}})
+    print(f"\n### REMOVED performance_id {performance_id} from document {song_of_user_id} in table songs_of_user!")
     
 def db_deep_remove_song_of_user(db, song_name, user_id):
     # (deep-deletion: it doesn't only remove the song_of_user, but also all of it's matching user_performances)
