@@ -257,9 +257,9 @@ class DBAccess:
         return result
 
     def deletePerformance(self, performanceId, songName):
-        db_remove_performance(self.db, performanceId)
-        songName = songName + self.getUserIdStr()
-        self.removePerformanceLocal(performanceId, songName)
+        songUserName = songName + self.getUserIdStr()
+        db_remove_performance(self.db, performanceId, songUserName)
+        self.removePerformanceLocal(performanceId, songUserName)
 
     def deleteSongAndPerformances(self, songName):
         songName = songName + self.getUserIdStr()

@@ -50,7 +50,8 @@ def db_add_new_song_for_existing_user(db, user_id, user_song_id):
     songs_of_user = db.songs_of_user
     # Dan: here we update a new song which the user sang, in db -
     print('\n### UPDATING: starting update to users ...')
-    users.update_one({'_id': user_id}, {"$set": {"user_songs": [user_song_id]}})
+    #users.update_one({'_id': user_id}, {"$set": {"user_songs": [user_song_id]}})
+    users.update_one({'_id': user_id}, {"$push": {"user_songs": user_song_id}})
     print('\n### UPDATED: succesfuly updated ', user_id, ' with ', user_song_id, 'in mongoDB!')
     print('\n### UPLOADING: starting upload to songs-of-user ...')
     songs_of_user.insert_one({'_id': user_song_id, "user_performances_id_list": []})
@@ -168,7 +169,7 @@ def db_deep_remove_song_of_user(db, song_name, user_id):
       removed_performances_counter = 0
       for performance_id in performances_ids:
         print(f'\n### REMOVING #{removed_performances_counter}, with id {performance_id}...')
-        db_remove_performance(db, performance_id)
+        db_remove_performance(db, performance_id, usersong_id)
         removed_performances_counter += 1
     # then, remove the actual song_of_user from db:
     res = db.songs_of_user.delete_many({"_id": usersong_id})
