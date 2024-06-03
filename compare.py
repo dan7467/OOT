@@ -1,21 +1,21 @@
 import math
-from typing import List
 import numpy as np
+from fastdtw import fastdtw
 from matplotlib import pyplot as plt
 import tkinter as tk
 
 from filesAccess import *
 
-#import sklearn
-import tslearn
-from tslearn import *
-from tslearn import metrics
-#from sklearn.metrics import r2_score
-
-from tslearn.backend import instantiate_backend             #TODO Dont delete this!!
-from tslearn.backend.numpy_backend import  NumPyBackend     #TODO Dont delete this!!
-from sklearn.metrics.pairwise import euclidean_distances    #TODO Dont delete this!!
-from sklearn.metrics.pairwise import pairwise_distances     #TODO Dont delete this!!
+# #import sklearn
+# import tslearn
+# from tslearn import *
+# from tslearn import metrics
+# #from sklearn.metrics import r2_score
+#
+# from tslearn.backend import instantiate_backend             #TODO Dont delete this!!
+# from tslearn.backend.numpy_backend import  NumPyBackend     #TODO Dont delete this!!
+# from sklearn.metrics.pairwise import euclidean_distances    #TODO Dont delete this!!
+# from sklearn.metrics.pairwise import pairwise_distances     #TODO Dont delete this!!
 
 class dtwElementInfo:
     def __init__(self, x, y, xIndex, yIndex, xTime, yTime):
@@ -125,17 +125,6 @@ def are_neighbors(frequency1, frequency2):
     res2 = abs(frequency2 * math.pow(2, 1/12) - frequency1)
     return res1 < 1 or res2 < 1
 
-
-
-# # https://discord.com/channels/1183328278983999579/1184833831686111365/1186322859036000437
-# def fastDTWTest(x, y):
-#     # distance, path = fastdtw(x, y, dist=d.euclidean)
-#     distance, path = fastdtw(x, y, dist=d.cosine)
-#     print(f"Distance: {distance}")
-#     print(f"Path: {path}")
-#
-#     for (i, j) in path:
-#         print(f"{i}: {x[i]}, {j}: {y[j]}")
 
 
 # # https://discord.com/channels/1183328278983999579/1184833831686111365/1186323274964148295
@@ -344,12 +333,33 @@ def computeScore(micFreqs, origFreqs):
     return similarity
 
 
+
+# # # https://discord.com/channels/1183328278983999579/1184833831686111365/1186322859036000437
+# def fastDTWTest(x, y):
+#     # distance, path = fastdtw(x, y, dist=d.euclidean)
+#     distance, path = fastdtw(x, y)
+#     print("#####fastDTWTest")
+#     print(f"Distance: {distance}")
+#     print(f"Path: {path}")
+#
+#     for (i, j) in path:
+#         print(f"{i}: {x[i]}, {j}: {y[j]}")
+#     print("#####fastDTWTest")
+
+def fastDTW(x, y):
+    distance, path = fastdtw(x, y)
+    return path
+
+# def tslearnDTW(x, y):
+#     return tslearn.metrics.dtw_path(x, y, sakoe_chiba_radius=1)
+
+
 def lcssAndDTW(x, y, xTime, yTime, songName, newMicSOngName):
     # Do I need to normalize it? yse a scaler like the example from the link?
 
     # Calculate DTW path and similarity
-    dtw_path, sim_dtw = tslearn.metrics.dtw_path(x, y, sakoe_chiba_radius=1)
-
+    dtw_path = fastDTW(x, y)
+    #dtw_path, sim = tslearnDTW(x, y)
     # Plotting
     #plt.figure(figsize=(8, 8))
     #lcssPlot(x, y, xTime, yTime)
@@ -447,6 +457,7 @@ def compare2Songs(origSongAndTime, performanceFreqAndTime,  songName, newMicSOng
 
     x = np.array([float(curr) for curr in x])
     y = np.array([float(curr) for curr in y])
+
 
     return lcssAndDTW(x, y, xTime, yTime, songName, newMicSOngName)
 
