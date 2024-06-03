@@ -8,10 +8,10 @@ import pyaudio
 
 from db_persistence_layer import *
 
-PATH = '../songsData/'    #TODO WHen running from MainContent
-WAV_PATH = '../songsWav/' #TODO WHen running from MainContent
-#PATH = './songsData/'       #TODO WHen running from tempScreen
-#WAV_PATH = './songsWav/'    #TODO WHen running from tempScreen
+PATH = '../songsData/'       #TODO WHen running from MainContent
+WAV_PATH = '../songsWav/'    #TODO WHen running from MainContent
+#PATH = './songsData/'       #TODO WHen running from tempScreen and mainTest
+#WAV_PATH = './songsWav/'    #TODO WHen running from tempScreen and mainTest
 DELIMITER = ' ; '
 DICT_DELIMITER = '-'
 # SAMPLE_COUNTER_INDEX = 0

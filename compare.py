@@ -5,8 +5,17 @@ from matplotlib import pyplot as plt
 import tkinter as tk
 
 from filesAccess import *
+
+#import sklearn
+import tslearn
+from tslearn import *
 from tslearn import metrics
-from sklearn.metrics import r2_score
+#from sklearn.metrics import r2_score
+
+from tslearn.backend import instantiate_backend             #TODO Dont delete this!!
+from tslearn.backend.numpy_backend import  NumPyBackend     #TODO Dont delete this!!
+from sklearn.metrics.pairwise import euclidean_distances    #TODO Dont delete this!!
+from sklearn.metrics.pairwise import pairwise_distances     #TODO Dont delete this!!
 
 class dtwElementInfo:
     def __init__(self, x, y, xIndex, yIndex, xTime, yTime):
@@ -339,7 +348,7 @@ def lcssAndDTW(x, y, xTime, yTime, songName, newMicSOngName):
     # Do I need to normalize it? yse a scaler like the example from the link?
 
     # Calculate DTW path and similarity
-    dtw_path, sim_dtw = metrics.dtw_path(x, y, sakoe_chiba_radius=1)
+    dtw_path, sim_dtw = tslearn.metrics.dtw_path(x, y, sakoe_chiba_radius=1)
 
     # Plotting
     #plt.figure(figsize=(8, 8))

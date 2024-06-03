@@ -4,7 +4,8 @@ from tkinter.messagebox import showinfo
 import numpy as np
 from PIL import Image, ImageTk
 
-from compare import ComparedSongs, dtwElementInfo
+import compare
+#from compare import ComparedSongs, dtwElementInfo
 from frontend.SongComponent import SongComponent
 from frontend.VirtualPiano import VirtualPiano
 from frontend.OutOfTune import OutOfTune
@@ -143,6 +144,6 @@ class MainContent(tk.Frame):
 
         infoDict = {}
         for xIdx, yIdx in dtw_path:
-            infoDict[(xIdx, yIdx)] = dtwElementInfo(x[xIdx], y[yIdx], xIdx, yIdx, xTime[xIdx], yTime[yIdx])
+            infoDict[(xIdx, yIdx)] = compare.dtwElementInfo(x[xIdx], y[yIdx], xIdx, yIdx, xTime[xIdx], yTime[yIdx])
 
-        self.comparedSongsObject = ComparedSongs(archivedName, performanceSongName, performanceObject["score"], infoDict, x, y, dtw_path)
+        self.comparedSongsObject = compare.ComparedSongs(archivedName, performanceSongName, performanceObject["score"], infoDict, x, y, dtw_path)
