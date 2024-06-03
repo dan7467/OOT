@@ -1,8 +1,8 @@
 # Out Of Tune v0.1
     Sagi, Dan, Nadia and Yonatan's project
 
-## Init:
-#### (may take a while...)
+## Init: Simply run 'pip install -r requirements.txt' to auto-import all neccesary libs.
+#### >> And if that didn't work, run the following (takes 2 minutes):
     1. apt install libasound2-dev portaudio19-dev libportaudio2 libportaudiocpp0 ffmpeg
 
     2. pip install PyAudio
