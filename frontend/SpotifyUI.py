@@ -8,7 +8,7 @@ class SpotifyUI(tk.Tk):
         super().__init__()
 
         self.title("Spotify-like UI")
-        self.geometry("1200x800")
+        self.geometry("1600x900")
 
         # Configure the grid layout
         self.grid_rowconfigure(0, weight=1)
