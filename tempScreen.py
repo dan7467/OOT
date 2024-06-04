@@ -86,6 +86,6 @@ def manageSongs(oot1):
 
 
 if __name__ == "__main__":
-    oot = OutOfTune()
+    oot = OutOfTune("Roni")
     openMenu(oot)
 

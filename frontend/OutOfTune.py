@@ -22,7 +22,7 @@ from filesAccess import *
 
 
 class OutOfTune:
-    def __init__(self):
+    def __init__(self, userName):
         #
         self.sampleCounter = 0
         self.detectedWavNotesDict = dict()  # key = sample number , value = freq
@@ -90,7 +90,7 @@ class OutOfTune:
         self.errorOccurred = False
         self.aborted = False
 
-        self.dbAccess = DBAccess("Roni")
+        self.dbAccess = DBAccess(userName)
         self.comparedSongs = None
 
     def createPiano(self, root):
@@ -760,7 +760,7 @@ class OutOfTune:
 
 def listToString(freqList):
     result = ""
-    oot = OutOfTune()
+    oot = OutOfTune("Roni")
     for curr in freqList:
         result += " " + str(oot.freqToNote(float(curr)))
     return result
@@ -771,7 +771,7 @@ if __name__ == "__main__":
     # list1 = np.array([350, 329.63, 200, 261.63, 329.63, 392.00, 350, 329.63, 200, 261.63, 329.63, 392.00, 350, 329.63, 200, 261.63, 329.63, 392.00])
     # list2 = np.array([200, 329.63, 200, 261.63, 329.63, 392.00, 350, 329.63, 200, 261.63, 329.63, 392.00, 350, 329.63, 200, 261.63, 329.63, 392.00])
     # computeScore(list1, list2)
-    oot = OutOfTune()
+    oot = OutOfTune("Roni")
 
     #oot.read_from_mic()
 

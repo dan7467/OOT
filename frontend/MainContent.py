@@ -16,9 +16,16 @@ class MainContent(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg="#121212")
         self.oot = None
-        self.dbAccess = DBAccess("Roni")
+        self.userName = None
+        self.dbAccess = None
+        self.saveUserName()  #remove this when nadia makes the field
         self.create_main_content()
         self.comparedSongsObject = None
+
+
+    def saveUserName(self):
+        self.userName = "Roni"
+        self.dbAccess = DBAccess(self.userName)
 
     def create_main_content(self):
         songsDict = printAvailableSongs(self.dbAccess)
@@ -73,7 +80,7 @@ class MainContent(tk.Frame):
         history_button.pack(pady=20)
 
     def startMic(self, songName):
-        self.oot = OutOfTune()
+        self.oot = OutOfTune(self.userName)
         self.comparedSongsObject = self.oot.read_from_mic(songName)
         print(self.getGrade())
         self.printGraph()
