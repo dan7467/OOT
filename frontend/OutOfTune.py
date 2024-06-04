@@ -153,18 +153,19 @@ class OutOfTune:
                             channels=wav.getnchannels(),
                             rate=wav.getframerate(),
                             output=True)
+            try:
+                while not self.stop_flag:
+                    data = wav.readframes(1024)
+                    if data == b'':
+                        break
 
-            while not self.stop_flag:
-                data = wav.readframes(1024)
-                if data == b'':
-                    break
+                    sample_width = wav.getsampwidth()
+                    data = self.adjust_volumeWAV(data, sample_width, 0.2)
 
-                sample_width = wav.getsampwidth()
-                data = self.adjust_volumeWAV(data, sample_width, 0.2)
-
-                # Reduce the volume by 50%
-                self.stream_playback.write(data)
-
+                    # Reduce the volume by 50%
+                    self.stream_playback.write(data)
+            except:
+                print("error in playback")
             # self.stream_playback.stop_stream()
             # self.stream_playback.close()
             # self.p_playback.terminate()
