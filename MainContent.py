@@ -6,9 +6,9 @@ from PIL import Image, ImageTk
 
 import compare
 #from compare import ComparedSongs, dtwElementInfo
-from frontend.SongComponent import SongComponent
-from frontend.VirtualPiano import VirtualPiano
-from frontend.OutOfTune import OutOfTune
+from SongComponent import SongComponent
+from VirtualPiano import VirtualPiano
+from OutOfTune import OutOfTune
 from filesAccess import *
 
 

@@ -1,5 +1,5 @@
 # main.py
-from frontend.SpotifyUI import SpotifyUI
+from SpotifyUI import SpotifyUI
 
 if __name__ == "__main__":
     app = SpotifyUI()
