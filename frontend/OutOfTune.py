@@ -5,6 +5,7 @@
 # pip install keyboard
 # pip install matplotlib
 # https://github.com/Marcuccio/Musical-note-detector/tree/master
+import struct
 import threading
 from collections import Counter
 
@@ -93,6 +94,9 @@ class OutOfTune:
         self.dbAccess = DBAccess(userName)
         self.comparedSongs = None
 
+        self.stream_playback = None
+        self.p_playback = None
+
     def createPiano(self, root):
         piano = VirtualPiano(root, width=1600, height=800)  # Adjust width here
         piano.pack(fill=tk.BOTH, expand=True)
@@ -126,12 +130,67 @@ class OutOfTune:
         timer_thread = threading.Thread(target=self.display_timer)
         timer_thread.start()
 
+        audio_thread = threading.Thread(target=self.play_audio, args=(self.songName,))
+        audio_thread.start()
+
         if self.currFileData is not None:
             # start the notes displayed from here!
             freqDict = self.currFileData.notesDict
             notesDict = self.transformFreqsDictToNotesDict(freqDict)
             notes_sequence = self.piano.transormDictToTuples(notesDict)
             self.piano.display_notes_sequence3(notes_sequence)
+
+    # Define a function to play the WAV file
+    def play_audio(self, songName):
+        time.sleep(4)    #The notes are starting some time after the start button is pressed, check how much exactly
+        path = getSongWavPath(songName) + ".wav"
+        if not checkIfFileExists(path):
+            print("file not found")
+            return
+        with wave.open(path, 'r') as wav:
+            self.p_playback = pyaudio.PyAudio()
+            self.stream_playback = self.p_playback.open(format=self.p_playback.get_format_from_width(wav.getsampwidth()),
+                            channels=wav.getnchannels(),
+                            rate=wav.getframerate(),
+                            output=True)
+
+            while not self.stop_flag:
+                data = wav.readframes(1024)
+                if data == b'':
+                    break
+
+                sample_width = wav.getsampwidth()
+                data = self.adjust_volumeWAV(data, sample_width, 0.2)
+
+                # Reduce the volume by 50%
+                self.stream_playback.write(data)
+
+            # self.stream_playback.stop_stream()
+            # self.stream_playback.close()
+            # self.p_playback.terminate()
+
+    def adjust_volumeWAV(self, frames, sample_width, volume):
+        # Determine the format string based on sample width
+        if sample_width == 1:
+            fmt = "{}B".format(len(frames))  # Unsigned char
+            scale = volume * 128 + 128
+        elif sample_width == 2:
+            fmt = "{}h".format(len(frames) // 2)  # Short
+            scale = volume
+        elif sample_width == 4:
+            fmt = "{}i".format(len(frames) // 4)  # Int
+            scale = volume
+        else:
+            raise ValueError("Unsupported sample width")
+
+        # Unpack the frames
+        samples = struct.unpack(fmt, frames)
+
+        # Adjust volume
+        samples = [int(sample * scale) for sample in samples]
+
+        # Pack the samples back into binary data
+        return struct.pack(fmt, *samples)
 
     def transformFreqsDictToNotesDict(self, freqDict):
         newDict = dict()
@@ -144,6 +203,11 @@ class OutOfTune:
             self.stream.stop_stream()
             self.stream.close()
             self.pa.terminate()
+
+            self.stream_playback.stop_stream()
+            self.stream_playback.close()
+            self.p_playback.terminate()
+
         except:
             print("error")
             self.errorOccurred = True
@@ -161,6 +225,11 @@ class OutOfTune:
             self.stream.stop_stream()
             self.stream.close()
             self.pa.terminate()
+
+            self.stream_playback.stop_stream()
+            self.stream_playback.close()
+            self.p_playback.terminate()
+
         except:
             print("error")
             self.errorOccurred = True
