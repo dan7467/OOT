@@ -21,6 +21,7 @@ class ProfileManagement(unittest.TestCase):
         # Check if the user exists in the database after creation
         # self.assertTrue(does_user_exist(self.oot.dbAccess.db, self.userName),
         #                 "Account creation failed, user does not exist")
+        pass
 
 
 if __name__ == '__main__':
