@@ -5,23 +5,61 @@ from frontend.OutOfTune import OutOfTune
 
 
 class ProfileManagement(unittest.TestCase):
-
-    userName = "ProfileManagement"
+    userName = "TestProfileManagement"
+    oot = None
+    songName = "mary"
+    songUserName = songName + '_' + userName
 
     @classmethod
     def setUpClass(cls):
         cls.oot = OutOfTune(cls.userName)
 
+
     @classmethod
     def tearDownClass(cls):
-        # Optionally, add cleanup code here if needed, like deleting the test user account
-        pass
+        cls.oot.dbAccess.deleteUser()
 
-    def test_1(self):
-        # Check if the user exists in the database after creation
-        # self.assertTrue(does_user_exist(self.oot.dbAccess.db, self.userName),
-        #                 "Account creation failed, user does not exist")
-        pass
+
+    # Add Song  3.1.1
+    def test_01_addSong(self):
+
+        nameWithWav = self.songName + '.wav'
+
+        self.oot.getSongData(nameWithWav, False, self.oot)
+        allSongs = self.oot.dbAccess.getSongsNameList()
+        self.assertTrue(self.songUserName in allSongs)
+
+    def test_02_addSongWrongName(self):
+        name = "NotExist.wav"
+        self.oot.getSongData(name, False, self.oot)
+        allSongs = self.oot.dbAccess.getSongsNameList()
+        self.assertFalse(name in allSongs)
+
+    def test_03_addSongNotCaseSensitive(self):
+        name = "MARY"
+        wavName = name + '.wav'
+        self.oot.getSongData(wavName, False, self.oot)
+        allSongs = self.oot.dbAccess.getSongsNameList()
+        songUserName = name + '_' + self.userName
+        self.assertTrue(songUserName in allSongs)
+
+    # Remove Song  3.1.2
+    def test_04_removeSong(self):
+
+        self.oot.dbAccess.deleteSongAndPerformances(self.songName)
+        allSongs = self.oot.dbAccess.getSongsNameList()
+        self.assertFalse(self.songUserName in allSongs)
+
+    def test_05_removeSongNotExisting(self):
+
+        self.oot.dbAccess.deleteSongAndPerformances("Not exists")
+        allSongs = self.oot.dbAccess.getSongsNameList()
+        self.assertFalse(self.songUserName in allSongs)
+
+    def test_06_removeSongAlreadyRemoved(self):
+
+        allSongs = self.oot.dbAccess.getSongsNameList()
+        self.assertFalse(self.songUserName in allSongs)
 
 
 if __name__ == '__main__':

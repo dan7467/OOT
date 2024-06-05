@@ -252,9 +252,12 @@ class DBAccess:
         return result
 
     def fetchPerformancesFromUser(self, songName):
-        result = fetch_every_user_performance(self.db, songName, self.userId)
-        result = [x for x in result if x is not None]
-        return result
+        try:
+            result = fetch_every_user_performance(self.db, songName, self.userId)
+            result = [x for x in result if x is not None]
+            return result
+        except:
+            return None
 
     def deletePerformance(self, performanceId, songName):
         #songUserName = songName + self.getUserIdStr()

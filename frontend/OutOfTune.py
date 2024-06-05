@@ -820,6 +820,9 @@ class OutOfTune:
         #     oot1.dbAccess.addSongForUser(songName)
 
         wavPath = getSongWavPath(file)
+        if not checkIfFileExists(wavPath):
+            print("File not exists")
+            return
         oot1.read_from_wav(wavPath, printBool, True)
         oot1.dbAccess.addSongForUser(songName + self.dbAccess.getUserIdStr())
 
