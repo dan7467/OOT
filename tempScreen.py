@@ -1,4 +1,4 @@
-from frontend.OutOfTune import OutOfTune
+from OutOfTune import OutOfTune
 from filesAccess import *
 
 

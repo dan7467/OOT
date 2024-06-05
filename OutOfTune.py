@@ -14,9 +14,8 @@ from scipy.io import wavfile
 from scipy.signal import fftconvolve
 from numpy import argmax, diff
 import time
-import tkinter as tk
 
-from frontend.VirtualPiano import VirtualPiano
+from VirtualPiano import VirtualPiano
 
 from compare import *
 from filesAccess import *
@@ -142,7 +141,7 @@ class OutOfTune:
 
     # Define a function to play the WAV file
     def play_audio(self, songName):
-        time.sleep(4)    #The notes are starting some time after the start button is pressed, check how much exactly
+        time.sleep(5)    #The notes are starting some time after the start button is pressed, check how much exactly
         path = getSongWavPath(songName) + ".wav"
         if not checkIfFileExists(path):
             print("file not found")
