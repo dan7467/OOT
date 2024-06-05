@@ -579,12 +579,6 @@ class OutOfTune:
             currNote = self.freqToNote(freq)
             print(f"{second}: {currNote}")
 
-        # plt.plot(result.keys(), result.values())
-        # plt.title("After chunk filtering")
-        # plt.legend()
-        # plt.show()
-        # plt.savefig("FilteredGraph")
-
         return result
 
     def read_from_wav(self, fileName, printGraph, saveFile):
@@ -604,7 +598,7 @@ class OutOfTune:
             if saveFile:
                 fileData = FileData(songName, self.sampleCounter, 0, round(self.TIME_TO_PROCESS, 4),
                                 self.rate_mic, dict_filtered)
-                saveToFile(fileData)  #TODO DELETE THIS WHEN DB IS READY, NOT SURE!!!!!
+                saveToFile(fileData)
 
         except Exception as error:
             # handle the exception
@@ -616,50 +610,10 @@ class OutOfTune:
 
 
 
-    # @jit(target_backend='cuda')
     def runCrepePrediction(self, y, sr):
-        # Call crepe to estimate pitch and confidence
-        # , viterbi=True, step_size=10
-        print("Starting crepe")
         return crepe.predict(y, sr, model_capacity='large', step_size=self.CREPE_STEP_SIZE, verbose=0)
 
     def plotGraphWav(self, seconds, freq, confidence):
-
-        # #Graph without confidence
-        # plt.plot(seconds, freq, label='Estimated pitch (Hz)', color='blue')
-        # plt.xlabel('Tims (s)')
-        # plt.ylabel('Frequency (Hz)')
-        # plt.title('Estimated Pitch')
-        # plt.legend()
-        #
-        # plt.tight_layout()
-        # plt.show()
-        # plt.savefig('wavGraph.png')
-
-        # two separate plots for estimated pitch and confidence
-        # fig, axs = plt.subplots(2, 1, figsize=(10, 8))
-        #
-        # # Plot the estimated pitch over time
-        # axs[0].plot(seconds, freq, label='Estimated pitch (Hz)', color='blue')
-        # axs[0].set_xlabel('Time (s)')
-        # axs[0].set_ylabel('Frequency (Hz)')
-        # axs[0].set_title('Estimated Pitch')
-        # axs[0].legend()
-
-        # # Plot the confidence over time
-        # axs[1].plot(seconds, confidence, label='Confidence', color='green')
-        # axs[1].set_xlabel('Time (s)')
-        # axs[1].set_ylabel('Confidence')
-        # axs[1].set_title('Confidence')
-        # axs[1].legend()
-
-        # Plot the estimated pitch over time
-        #
-        # plt.tight_layout()
-        # plt.show()
-
-        # fig.savefig('wavGraph.png')
-
         return
 
     def setTimerWindowButtons(self):
@@ -716,58 +670,6 @@ class OutOfTune:
         else:
             print("Song does not exists!")
             return songName
-
-    def filterNoise(self, reliable_time, reliable_frequency):
-        pass
-
-    # def getShortAudioClipFromEntries(self, name, startingIndex, endingIndex, dtwElementsInfo):
-    #     startingIndex = int(startingIndex)
-    #     endingIndex = int(endingIndex)
-    #     if name == 1:
-    #         songName = self.newMicSOngName
-    #         startingSecond, endingSecond = getClosestElementsWIthIndices(dtwElementsInfo, startingIndex,
-    #                                                                      endingIndex, "x")
-    #     else:
-    #         songName = self.origWAVName
-    #         startingSecond, endingSecond = getClosestElementsWIthIndices(dtwElementsInfo, startingIndex,
-    #                                                                      endingIndex, "y")
-    #
-    #     getShortAudioClip(songName, startingSecond, endingSecond)
-
-    # def hearClips(self):
-    #     window = tk.Tk()
-    #
-    #     # file_label = tk.Label(window, text="File Name:")
-    #     # file_label.pack()
-    #     # file_name_entry = tk.Entry(window)
-    #     # file_name_entry.pack()
-    #
-    #     starting_label = tk.Label(window, text="Starting Second:")
-    #     starting_label.pack()
-    #     starting_entry = tk.Entry(window)
-    #     starting_entry.pack()
-    #
-    #     ending_label = tk.Label(window, text="Ending Second:")
-    #     ending_label.pack()
-    #     ending_entry = tk.Entry(window)
-    #     ending_entry.pack()
-    #
-    #     play_button_mic = tk.Button(window, text="Play from original",
-    #                                 command=lambda: self.getShortAudioClipFromEntries(2, starting_entry.get(),
-    #                                                                                   ending_entry.get(), self.comparedSongs.dtwElements))
-    #     play_button_orig = tk.Button(window, text="Play from mic",
-    #                                  command=lambda: self.getShortAudioClipFromEntries(1,
-    #                                                                                    starting_entry.get(),
-    #                                                                                    ending_entry.get(),
-    #                                                                                    self.comparedSongs.dtwElements))
-    #     play_button_mic.pack()
-    #     play_button_orig.pack()
-    #
-    #     def on_closing():
-    #         window.destroy()
-    #
-    #     window.protocol("WM_DELETE_WINDOW", on_closing)
-    #     window.mainloop()
 
 
     def fetchAllPerformances(self, songName):
