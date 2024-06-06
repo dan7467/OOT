@@ -140,6 +140,7 @@ class OutOfTune:
             notes_sequence = self.piano.transormDictToTuples(notesDict)
             self.piano.display_notes_sequence3(notes_sequence)
 
+
     # Define a function to play the WAV file
     def play_audio(self, songName):
         time.sleep(4)    #The notes are starting some time after the start button is pressed, check how much exactly
@@ -235,7 +236,8 @@ class OutOfTune:
             print("error")
             self.errorOccurred = True
         finally:
-            self.root.quit()
+            #self.root.quit()
+            self.root.destroy()
             self.stop_flag = True  # Set stop flag to True to stop the microphone input loop
             self.aborted = True
 
@@ -401,7 +403,7 @@ class OutOfTune:
 
             #print("\n\nFirst version notes")
             #self.removeDuplicatesFromDict(list(self.dictFromMic.keys()), list(self.dictFromMic.values()), False)
-
+            print("Got here")
             # record_path = getSongWavPath(self.songName) + '.wav'
             record_path = getSongWavPath(self.newMicSOngName) + '.wav'
 

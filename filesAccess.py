@@ -62,13 +62,13 @@ def printAvailableSongs(db):
     return dictSongs
 
 
-def printAvailableWavs():
-    print("All the available WAVs:")
+def getAvailableWAVS():
+    #print("All the available WAVs:")
     dictSongs = dict()
     for number, file_name in enumerate(os.listdir(WAV_PATH)):
         if file_name.endswith('.wav'):
             songStr = file_name[:-4]
-            print(f'{number}) {songStr}')
+            #print(f'{number}) {songStr}')
             dictSongs[str(number)] = songStr
 
     return dictSongs
@@ -267,7 +267,6 @@ class DBAccess:
         self.removePerformanceLocal(performanceId, songUserName)
 
     def deleteSongAndPerformances(self, songName):
-        songName = songName + self.getUserIdStr()
         self.removeFromLocal(songName)
 
         db_deep_remove_song_of_user(self.db, songName, self.userId)
@@ -298,3 +297,12 @@ class DBAccess:
     def removePerformanceLocal(self, performanceId, songName):
         wavSongName = songName + str(performanceId)
         deleteSongWav(wavSongName)
+
+    def getAvailableWavsToAdd(self):
+        res = list(getAvailableWAVS().values())
+        songsWithoutUsers = [x for x in res if '_' not in x]
+        songsWithUser = [x for x in res if self.userId in x]
+        return songsWithoutUsers
+
+
+

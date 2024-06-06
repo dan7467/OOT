@@ -35,7 +35,7 @@ def openMenu(oot1):
 
 #Return -1 if song does not exist
 def printSongsWAVMenuAndReturnName():
-    dictSongs = printAvailableWavs()
+    dictSongs = getAvailableWAVS()
 
     songNum = input("Enter the number of the song: ")
     if songNum not in dictSongs.keys():

@@ -45,8 +45,7 @@ class ProfileManagement(unittest.TestCase):
 
     # Remove Song  3.1.2
     def test_04_removeSong(self):
-
-        self.oot.dbAccess.deleteSongAndPerformances(self.songName)
+        self.oot.dbAccess.deleteSongAndPerformances(self.songUserName)
         allSongs = self.oot.dbAccess.getSongsNameList()
         self.assertFalse(self.songUserName in allSongs)
 

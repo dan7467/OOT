@@ -6,7 +6,6 @@ from frontend.Sidebar import Sidebar
 class SpotifyUI(tk.Tk):
     def __init__(self):
         super().__init__()
-
         self.title("Spotify-like UI")
         self.geometry("1600x900")
 
@@ -19,5 +18,5 @@ class SpotifyUI(tk.Tk):
         self.sidebar.grid(row=0, column=0, sticky="ns")
 
         # Initialize Main Content Area
-        self.main_content = MainContent(self)
+        self.main_content = MainContent(self, "A")
         self.main_content.grid(row=0, column=1, sticky="nsew")

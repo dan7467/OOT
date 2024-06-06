@@ -52,7 +52,7 @@ class FileAccessUnitTests(unittest.TestCase):
     @patch('os.listdir')
     def test_getAvailableWavs(self, mock_listdir):
         mock_listdir.return_value = ['song1.wav', 'song2.wav']
-        result = printAvailableWavs()
+        result = getAvailableWAVS()
         self.assertEqual('song1', result['0'])
         self.assertEqual('song2', result['1'])
 
