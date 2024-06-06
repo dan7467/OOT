@@ -1,6 +1,6 @@
 # main.py
-from frontend.SpotifyUI import SpotifyUI
+from frontend.LoginPage import LoginPage
 
 if __name__ == "__main__":
-    app = SpotifyUI()
-    app.mainloop()
+    login_page = LoginPage()
+    login_page.mainloop()

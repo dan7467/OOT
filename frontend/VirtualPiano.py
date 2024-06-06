@@ -52,11 +52,14 @@ class VirtualPiano(tk.Canvas):
         key_width = piano_width / len(self.notes)
         piano_height = self.winfo_reqheight() / 2
 
-        # Schedule the display of each note
-        delay = 0
-        for note, duration in notes_sequence:
-            self.after(delay, self.display_note1, note, duration, piano_width, key_width, piano_height)
-            delay += int(duration * 3000)  # Convert duration to milliseconds
+        try:
+            # Schedule the display of each note
+            delay = 0
+            for note, duration in notes_sequence:
+                self.after(delay, self.display_note1, note, duration, piano_width, key_width, piano_height)
+                delay += int(duration * 3000)  # Convert duration to milliseconds
+        except:
+            print("stopped piano")
 
     def display_note1(self, note, duration, piano_width, key_width, piano_height):
         key_index = self.notes.index(note) if note else 0  # Set key_index to 0 if note is None
