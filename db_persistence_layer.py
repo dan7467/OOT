@@ -174,6 +174,9 @@ def db_deep_remove_song_of_user(db, song_name, user_id):
     # then, remove the actual song_of_user from db:
     res = db.songs_of_user.delete_many({"_id": usersong_id})
     #print(f"\n### REMOVED user_song {song_name} by {user_id}, and all of it's performances!")
+    # remove song from user_songs (in users table):
+    db.users.update_one({'_id':user_id} ,{"$pull" : {"user_songs": song_name}})
+    # print(f"\n### REMOVED song {song_name} from document {user_id} in users!")
 
 def db_deep_remove_user(db,user_id):
     # (deep-deletion: it doesn't only remove the user, but also all of it's matching songs_of_user, and all of their user_performances)
