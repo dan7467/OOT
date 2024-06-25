@@ -113,7 +113,7 @@ class TestDTWFunctions(unittest.TestCase):
         songName = "test_song"
         newMicSOngName = "test_mic_song"
 
-        result = lcssAndDTW(x, y, xTime, yTime, songName, newMicSOngName)
+        result = dtwAlgo(x, y, xTime, yTime, songName, newMicSOngName)
         self.assertIsInstance(result, ComparedSongs)
         self.assertEqual(result.songName, songName)
         self.assertEqual(result.performanceName, newMicSOngName)
@@ -130,7 +130,7 @@ class TestDTWFunctions(unittest.TestCase):
         songName = "test_song"
         newMicSOngName = "test_mic_song"
 
-        result = lcssAndDTW(x, y, xTime, yTime, songName, newMicSOngName)
+        result = dtwAlgo(x, y, xTime, yTime, songName, newMicSOngName)
         self.assertIsInstance(result, ComparedSongs)
         self.assertEqual(result.songName, songName)
         self.assertEqual(result.performanceName, newMicSOngName)

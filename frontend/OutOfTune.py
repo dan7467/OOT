@@ -108,9 +108,6 @@ class OutOfTune:
         return self.tunerNotes[freq]
 
     def start_timer(self):
-        # print("Buffer size: ", self.buffer_size)
-        # print("Rate: ", self.rate_mic)
-        # print("Time of each chunk: ", self.buffer_size / self.rate_mic)
         self.pa = pyaudio.PyAudio()
         self.stream = self.pa.open(
             format=self.FORMAT,
@@ -270,7 +267,6 @@ class OutOfTune:
 
         self.recorded_frames_crepe.append(in_data)  # for crepe
 
-        # raw_data_signal = np.fromstring( in_data,dtype= np.int16 )
         raw_data_signal = np.frombuffer(in_data, dtype=np.int16)
 
         if not self.start_flag:  # if the timer hadn't been started
@@ -290,37 +286,12 @@ class OutOfTune:
         if signal_level > self.soundGate:
             return raw_data_signal, pyaudio.paContinue
 
-        # inputnote = inputnote / 2    #TEMP REMOVE THIS!!!!!
-
         targetNote = self.closest_value_index(self.frequencies, round(inputnote, 2))
 
         elapsed_time = self.calcTime()
 
         curr_note = self.tunerNotes[self.frequencies[targetNote]]
         self.dictFromMic[elapsed_time] = self.frequencies[targetNote]
-
-        # Print the note with the elapsed time and error percentage
-        # print(f"{elapsed_time}: {curr_note}")
-
-        # #Trying crepe
-        # raw_data_signal = np.frombuffer(in_data, dtype=np.int16)
-        # seconds, frequencies, confidence, _ = crepe.predict(raw_data_signal, self.rate_mic, step_size=20, model_capacity='tiny', verbose=0)
-        #
-        # reliable_indices = confidence >= 0.7
-        # #reliable_confidence = confidence[reliable_indices]
-        # #reliable_time = seconds[reliable_indices]
-        # reliable_frequency = frequencies[reliable_indices]
-        #
-        # freqs = [self.tunerNotes[self.frequencies[self.closest_value_index(self.frequencies, frequency)]] for frequency in reliable_frequency]
-        #
-        # count = Counter(freqs)
-        # most_common = count.most_common(1)  # Get the most common element and its count as a list of tuples
-        # if len(most_common) == 0:
-        #     most_commonNum = 0
-        # else:
-        #     most_commonNum = most_common[0][0]
-        #
-        # print(f"CREPE: {elapsed_time} : {freqs}, (most common-{most_commonNum})\n")
 
         self.piano.update_piano(curr_note, self.errorOccurred)
 
@@ -364,27 +335,19 @@ class OutOfTune:
 
     def read_from_mic(self, songName):
         fileData = self.getSongFileData(songName)
-        #fileData = self.getNameOfSongFromInput()
         self.matchingToSongBool = type(fileData) is FileData
         self.songName = "tempMic"
         dictFromArchivedSong = None
         if self.matchingToSongBool:
             print("Comparing to a song!")
             self.currFileData = fileData
-            # # ensure the time between each note printed is the same as the archived version!
-            # self.rate_mic = int(fileData.sampleRate)
-            # self.buffer_size = int(self.rate_mic * fileData.durationToProcess)
-#            self.newMicSOngName = fileData.songName + 'Mic'
             self.newMicSOngName = fileData.songName + self.dbAccess.getUserIdStr() + generate_random_id()
 
             self.songName = fileData.songName
             self.origWAVName = self.newMicSOngName.split('_')[0]
             dictFromArchivedSong = fileData.notesDict
         elif type(fileData) is str:
-            # self.songName = fileData + 'Mic'
             self.newMicSOngName = fileData
-
-        # print("Sample Rate: ", self.rate_mic)
 
         try:
             self.errorOccurred = False
@@ -401,10 +364,6 @@ class OutOfTune:
             if dictFromArchivedSong is not None:
                 self.adjustMicTimesAccordingToArchive(dictFromArchivedSong, self.dictFromMic)
 
-            #print("\n\nFirst version notes")
-            #self.removeDuplicatesFromDict(list(self.dictFromMic.keys()), list(self.dictFromMic.values()), False)
-            print("Got here")
-            # record_path = getSongWavPath(self.songName) + '.wav'
             record_path = getSongWavPath(self.newMicSOngName) + '.wav'
 
             # Until here we saved the recorded in a wav file, now we analyze it and save the data!
@@ -588,7 +547,7 @@ class OutOfTune:
             songName = fileName.split('/')[-1].split('.')[0]
             sr, y = wavfile.read(fileName)
             seconds, frequency, confidence, _ = self.runCrepePrediction(y, sr)
-            # Filter out frequencies with confidence below 0.5
+            # Filter out frequencies with confidence below 0.9
             reliable_indices = confidence >= self.CONFIDENCE_LEVEL
             reliable_confidence = confidence[reliable_indices]
             reliable_time = seconds[reliable_indices]

@@ -354,7 +354,7 @@ def fastDTW(x, y):
 #     return tslearn.metrics.dtw_path(x, y, sakoe_chiba_radius=1)
 
 
-def lcssAndDTW(x, y, xTime, yTime, songName, newMicSOngName):
+def dtwAlgo(x, y, xTime, yTime, songName, newMicSOngName):
     # Do I need to normalize it? yse a scaler like the example from the link?
 
     # Calculate DTW path and similarity
@@ -449,6 +449,10 @@ def lcssAndDTW(x, y, xTime, yTime, songName, newMicSOngName):
 #     return lcssAndDTW(x, y, xTime, yTime)
 
 
+
+
+
+
 def compare2Songs(origSongAndTime, performanceFreqAndTime,  songName, newMicSOngName):
     xTime = list(origSongAndTime.keys())
     x = origSongAndTime.values()
@@ -459,7 +463,7 @@ def compare2Songs(origSongAndTime, performanceFreqAndTime,  songName, newMicSOng
     y = np.array([float(curr) for curr in y])
 
 
-    return lcssAndDTW(x, y, xTime, yTime, songName, newMicSOngName)
+    return dtwAlgo(x, y, xTime, yTime, songName, newMicSOngName)
 
 
 
