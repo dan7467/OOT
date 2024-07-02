@@ -1,4 +1,7 @@
 import math
+import threading
+import time
+
 import numpy as np
 from fastdtw import fastdtw
 from matplotlib import pyplot as plt
@@ -42,40 +45,79 @@ class ComparedSongs:
 
 
 
+    # def hearClips(self):
+    #     window = tk.Tk()
+    #
+    #     # file_label = tk.Label(window, text="File Name:")
+    #     # file_label.pack()
+    #     # file_name_entry = tk.Entry(window)
+    #     # file_name_entry.pack()
+    #
+    #     starting_label = tk.Label(window, text="Starting Second:")
+    #     starting_label.pack()
+    #     starting_entry = tk.Entry(window)
+    #     starting_entry.pack()
+    #
+    #     ending_label = tk.Label(window, text="Ending Second:")
+    #     ending_label.pack()
+    #     ending_entry = tk.Entry(window)
+    #     ending_entry.pack()
+    #
+    #     play_button_mic = tk.Button(window, text="Play from original",
+    #                                 command=lambda: self.getShortAudioClipFromEntries(2, starting_entry.get(),
+    #                                                                                   ending_entry.get(), self.dtwElements))
+    #     play_button_orig = tk.Button(window, text="Play from mic",
+    #                                  command=lambda: self.getShortAudioClipFromEntries(1,
+    #                                                                                    starting_entry.get(),
+    #                                                                                    ending_entry.get(),
+    #                                                                                    self.dtwElements))
+    #     play_button_mic.pack()
+    #     play_button_orig.pack()
+    #
+    #     def on_closing():
+    #         window.destroy()
+    #
+    #     window.protocol("WM_DELETE_WINDOW", on_closing)
+    #     window.mainloop()
+
+
+
     def hearClips(self):
-        window = tk.Tk()
+        def run_tk():
+            time.sleep(1)
+            window = tk.Tk()
 
-        # file_label = tk.Label(window, text="File Name:")
-        # file_label.pack()
-        # file_name_entry = tk.Entry(window)
-        # file_name_entry.pack()
+            starting_label = tk.Label(window, text="Starting Second:")
+            starting_label.pack()
+            starting_entry = tk.Entry(window)
+            starting_entry.pack()
 
-        starting_label = tk.Label(window, text="Starting Second:")
-        starting_label.pack()
-        starting_entry = tk.Entry(window)
-        starting_entry.pack()
+            ending_label = tk.Label(window, text="Ending Second:")
+            ending_label.pack()
+            ending_entry = tk.Entry(window)
+            ending_entry.pack()
 
-        ending_label = tk.Label(window, text="Ending Second:")
-        ending_label.pack()
-        ending_entry = tk.Entry(window)
-        ending_entry.pack()
+            play_button_mic = tk.Button(window, text="Play from original",
+                                        command=lambda: self.getShortAudioClipFromEntries(2, starting_entry.get(),
+                                                                                          ending_entry.get(), self.dtwElements))
+            play_button_orig = tk.Button(window, text="Play from mic",
+                                         command=lambda: self.getShortAudioClipFromEntries(1,
+                                                                                           starting_entry.get(),
+                                                                                           ending_entry.get(),
+                                                                                           self.dtwElements))
+            play_button_mic.pack()
+            play_button_orig.pack()
 
-        play_button_mic = tk.Button(window, text="Play from original",
-                                    command=lambda: self.getShortAudioClipFromEntries(2, starting_entry.get(),
-                                                                                      ending_entry.get(), self.dtwElements))
-        play_button_orig = tk.Button(window, text="Play from mic",
-                                     command=lambda: self.getShortAudioClipFromEntries(1,
-                                                                                       starting_entry.get(),
-                                                                                       ending_entry.get(),
-                                                                                       self.dtwElements))
-        play_button_mic.pack()
-        play_button_orig.pack()
+            def on_closing():
+                window.destroy()
 
-        def on_closing():
-            window.destroy()
+            window.protocol("WM_DELETE_WINDOW", on_closing)
+            window.mainloop()
 
-        window.protocol("WM_DELETE_WINDOW", on_closing)
-        window.mainloop()
+        thread = threading.Thread(target=run_tk)
+        thread.start()
+
+
 
 
     def getShortAudioClipFromEntries(self, name, startingIndex, endingIndex, dtwElementsInfo):

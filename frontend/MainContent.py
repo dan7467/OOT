@@ -150,8 +150,8 @@ class MainContent(tk.Frame):
         return self.comparedSongsObject.score
 
     def printGraph(self):
-        self.comparedSongsObject.showBarGraph()
         self.comparedSongsObject.hearClips()
+        self.comparedSongsObject.showBarGraph()
 
     def showHistoryOfSong(self, songName):
         songNameWithoutUserName = songName.split('_')[0]
