@@ -1,7 +1,6 @@
 import unittest
 
-from db_persistence_layer import *
-from frontend.OutOfTune import OutOfTune
+from OutOfTune import OutOfTune
 
 
 class ProfileManagement(unittest.TestCase):

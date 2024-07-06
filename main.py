@@ -1,5 +1,5 @@
 # main.py
-from frontend.LoginPage import LoginPage
+from LoginPage import LoginPage
 
 if __name__ == "__main__":
     login_page = LoginPage()

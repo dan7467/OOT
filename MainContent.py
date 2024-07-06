@@ -7,10 +7,10 @@ import numpy as np
 from PIL import Image, ImageTk
 
 from compare import ComparedSongs, dtwElementInfo
-from frontend.SongComponent import SongComponent
-from frontend.SongPerformanceEntry import SongPerformanceEntry
-from frontend.VirtualPiano import VirtualPiano
-from frontend.OutOfTune import OutOfTune
+from SongComponent import SongComponent
+from SongPerformanceEntry import SongPerformanceEntry
+from VirtualPiano import VirtualPiano
+from OutOfTune import OutOfTune
 from filesAccess import *
 
 

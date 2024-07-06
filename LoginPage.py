@@ -1,8 +1,7 @@
 import tkinter as tk
 
-from filesAccess import DBAccess
-from frontend.MainContent import MainContent
-from frontend.Sidebar import Sidebar
+from MainContent import MainContent
+from Sidebar import Sidebar
 
 
 class LoginPage(tk.Tk):

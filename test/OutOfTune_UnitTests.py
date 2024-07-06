@@ -1,9 +1,8 @@
 import unittest
-from unittest.mock import patch, MagicMock, mock_open
-import numpy as np
+from unittest.mock import patch
 
 # Assuming OutOfTune class is defined in the module out_of_tune
-from frontend.OutOfTune import *
+from OutOfTune import *
 
 
 class TestOutOfTune(unittest.TestCase):

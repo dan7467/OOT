@@ -6,17 +6,14 @@
 # pip install matplotlib
 # https://github.com/Marcuccio/Musical-note-detector/tree/master
 import struct
-import threading
 from collections import Counter
 
 import crepe
 from scipy.io import wavfile
 from scipy.signal import fftconvolve
 from numpy import argmax, diff
-import time
-import tkinter as tk
 
-from frontend.VirtualPiano import VirtualPiano
+from VirtualPiano import VirtualPiano
 
 from compare import *
 from filesAccess import *

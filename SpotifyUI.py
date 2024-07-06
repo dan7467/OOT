@@ -1,6 +1,6 @@
 import tkinter as tk
-from frontend.MainContent import MainContent
-from frontend.Sidebar import Sidebar
+from MainContent import MainContent
+from Sidebar import Sidebar
 
 
 class SpotifyUI(tk.Tk):
