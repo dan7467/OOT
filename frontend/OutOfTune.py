@@ -23,8 +23,8 @@ from filesAccess import *
 
 
 class OutOfTune:
-    def __init__(self, userName):
-        #
+    def __init__(self, userName, showScreen=True):
+        self.showScreen = showScreen
         self.sampleCounter = 0
         self.detectedWavNotesDict = dict()  # key = sample number , value = freq
         self.dictFromMic = dict()
@@ -68,7 +68,8 @@ class OutOfTune:
         self.start_button = None
         self.stop_button = None
         self.deleteCurrRecording_button = None
-        self.setTimerWindowButtons()
+        if self.showScreen:
+            self.setTimerWindowButtons()
 
         self.start_flag = False
         self.stop_flag = False
@@ -86,7 +87,8 @@ class OutOfTune:
         self.newMicSOngName = ""
         self.origWAVName = ""
         self.currFileData = None
-        self.piano = self.createPiano(self.root)
+        if self.showScreen:
+            self.piano = self.createPiano(self.root)
         self.TIME_UNTIL_FIRST_NOTE_MIC = 6  # This version of the piano, the real notes from mic starts from second 6
         self.errorOccurred = False
         self.aborted = False
