@@ -27,7 +27,7 @@ class MainContent(tk.Frame):
     def create_main_content(self):
         songsDict = printAvailableSongs(self.dbAccess)
         songsList = list(songsDict.values())
-        self.songs = [{"img": "./images/images.jpeg", "title": str(i), "artist": "Artist 1"} for i in songsList]
+        self.songs = [{"img": "./images/images.jpeg", "title": str(i), "artist": "Artist 1", "nameToDisplay": str(i).split('_')[0]} for i in songsList]
         self.refresh_content()
 
 
@@ -37,7 +37,7 @@ class MainContent(tk.Frame):
         columns_per_row = 6
         songsDict = printAvailableSongs(self.dbAccess)
         songsList = list(songsDict.values())
-        self.songs = [{"img": "./images/images.jpeg", "title": str(i), "artist": "Artist 1"} for i in songsList]
+        self.songs = [{"img": "./images/images.jpeg", "title": str(i), "artist": "Artist 1", "nameToDisplay": str(i).split('_')[0]} for i in songsList]
         for idx, song in enumerate(self.songs):
             row = idx // columns_per_row
             column = idx % columns_per_row
@@ -128,7 +128,7 @@ class MainContent(tk.Frame):
         img_label.image = img
         img_label.pack(pady=20)
 
-        song_title = tk.Label(play_frame, text=song["title"], fg="#B31312", bg="#EEEEEE", font=("Helvetica", 24))
+        song_title = tk.Label(play_frame, text=song["nameToDisplay"], fg="#B31312", bg="#EEEEEE", font=("Helvetica", 24))
         song_title.pack(pady=10)
 
         song_artist = tk.Label(play_frame, text=song["artist"], fg="gray", bg="#EEEEEE", font=("Helvetica", 18))

@@ -86,7 +86,7 @@ class MainContent(tk.Frame):
         img_label.image = img  # Keep a reference to avoid garbage collection
         img_label.pack(pady=20)
 
-        song_title = tk.Label(play_frame, text=song["title"], fg="white", bg="#121212", font=("Helvetica", 24))
+        song_title = tk.Label(play_frame, text=song["nameToDisplay"], fg="white", bg="#121212", font=("Helvetica", 24))
         song_title.pack(pady=10)
 
         song_artist = tk.Label(play_frame, text=song["artist"], fg="gray", bg="#121212", font=("Helvetica", 18))

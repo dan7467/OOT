@@ -6,11 +6,11 @@ class Sidebar(tk.Frame):
 
     def create_sidebar_buttons(self):
 
-         btn = tk.Button(self, text="Home", bg="#1DB954", fg="#B31312", bd=0, relief="flat",
+         btn = tk.Button(self, text="Home", bg="white", fg="#B31312", bd=0, relief="flat",
                         font=("Helvetica", 12), command=self.on_sidebar_button_click)
          btn.pack(fill="x", pady=5, padx=10),
 
-         btn_AddSong = tk.Button(self, text="Add Song", bg="#1DB954", fg="#B31312", bd=0, relief="flat",
+         btn_AddSong = tk.Button(self, text="Add Song", bg="white", fg="#B31312", bd=0, relief="flat",
                     font=("Helvetica", 12), command=self.on_add_Song)
          btn_AddSong.pack(fill="x", pady=5, padx=10)
 

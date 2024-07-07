@@ -11,13 +11,13 @@ class LoginPage(tk.Tk):
         self.title("Login")
         self.geometry("1600x900")
 
-        self.label = tk.Label(self, text="Enter your name:",fg="#B31312")
+        self.label = tk.Label(self, text="Enter your name:", fg="#B31312")
         self.label.pack()
 
         self.name_entry = tk.Entry(self,fg="#B31312")
         self.name_entry.pack()
 
-        self.login_button = tk.Button(self, text="Login", command=self.save_name,fg="#B31312")
+        self.login_button = tk.Button(self, text="Login", command=self.save_name, fg="#B31312")
         self.login_button.pack()
 
     def save_name(self):

@@ -27,7 +27,7 @@ class SongComponent(tk.Frame):
         text_frame = tk.Frame(self, bg="#EEEEEE")
         text_frame.pack(side="top", pady=10)  # Increased padding
 
-        song_title = tk.Label(text_frame, text=self.song["title"], fg="#B31312", bg="#EEEEEE", font=("Helvetica", 16))
+        song_title = tk.Label(text_frame, text=self.song["nameToDisplay"], fg="#B31312", bg="#EEEEEE", font=("Helvetica", 16))
         song_title.pack(anchor="center")
 
         song_artist = tk.Label(text_frame, text=self.song["artist"], fg="#B31312", bg="#EEEEEE", font=("Helvetica", 14))

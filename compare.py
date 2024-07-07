@@ -1,6 +1,7 @@
 import math
 import threading
 import time
+from tkinter import messagebox
 
 import numpy as np
 from fastdtw import fastdtw
@@ -87,6 +88,18 @@ class ComparedSongs:
             time.sleep(1)
             window = tk.Tk()
 
+            def validate_and_get_values():
+                start_value = starting_entry.get()
+                end_value = ending_entry.get()
+                if not start_value.isdigit() or int(start_value) < 0:
+                    error_label.config(text="Please enter a positive number for Starting Second.")
+                    return None, None
+                if not end_value.isdigit() or int(end_value) < 0:
+                    error_label.config(text="Please enter a positive number for Ending Second.")
+                    return None, None
+                error_label.config(text="")  # Clear any previous error message
+                return int(start_value), int(end_value)
+
             starting_label = tk.Label(window, text="Starting Second:")
             starting_label.pack()
             starting_entry = tk.Entry(window)
@@ -97,14 +110,21 @@ class ComparedSongs:
             ending_entry = tk.Entry(window)
             ending_entry.pack()
 
-            play_button_mic = tk.Button(window, text="Play from original",
-                                        command=lambda: self.getShortAudioClipFromEntries(2, starting_entry.get(),
-                                                                                          ending_entry.get(), self.dtwElements))
-            play_button_orig = tk.Button(window, text="Play from mic",
-                                         command=lambda: self.getShortAudioClipFromEntries(1,
-                                                                                           starting_entry.get(),
-                                                                                           ending_entry.get(),
-                                                                                           self.dtwElements))
+            error_label = tk.Label(window, text="", fg="red")
+            error_label.pack()
+
+            def play_from_original():
+                start_value, end_value = validate_and_get_values()
+                if start_value is not None and end_value is not None:
+                    self.getShortAudioClipFromEntries(2, start_value, end_value, self.dtwElements)
+
+            def play_from_mic():
+                start_value, end_value = validate_and_get_values()
+                if start_value is not None and end_value is not None:
+                    self.getShortAudioClipFromEntries(1, start_value, end_value, self.dtwElements)
+
+            play_button_mic = tk.Button(window, text="Play from original", command=play_from_original)
+            play_button_orig = tk.Button(window, text="Play from mic", command=play_from_mic)
             play_button_mic.pack()
             play_button_orig.pack()
 
